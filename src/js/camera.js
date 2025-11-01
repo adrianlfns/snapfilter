@@ -19,6 +19,7 @@ let sharpenIntensitySlider = document.getElementById('sharpen-intensity');
 let sharpenIntensityValue = document.getElementById('sharpen-intensity-value');
 
 let grayscaleEnable = document.getElementById('grayscale-enable');
+let embossEnable = document.getElementById('emboss-enable');
 
 // Edge Detection Controls
 let edgeEnable = document.getElementById('edge-enable');
@@ -32,16 +33,6 @@ let cannyThreshold1Value = document.getElementById('canny-threshold1-value');
 let cannyThreshold2Slider = document.getElementById('canny-threshold2');
 let cannyThreshold2Value = document.getElementById('canny-threshold2-value');
 
-// Cartoon Effect Controls
-let cartoonEnable = document.getElementById('cartoon-enable');
-let cartoonControls = document.getElementById('cartoon-controls');
-let cartoonDiameterSlider = document.getElementById('cartoon-diameter');
-let cartoonDiameterValue = document.getElementById('cartoon-diameter-value');
-let cartoonSigmaColorSlider = document.getElementById('cartoon-sigma-color');
-let cartoonSigmaColorValue = document.getElementById('cartoon-sigma-color-value');
-let cartoonSigmaSpaceSlider = document.getElementById('cartoon-sigma-space');
-let cartoonSigmaSpaceValue = document.getElementById('cartoon-sigma-space-value');
-
 function startApp() {
     console.log('OpenCV Ready for Camera');
 
@@ -52,7 +43,6 @@ function startApp() {
     gaussianBlurSigmaYSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
     sharpenIntensitySlider.style.opacity = sharpenEnable.checked ? '1' : '0.5';
     edgeControls.style.display = edgeEnable.checked ? 'block' : 'none';
-    cartoonControls.style.display = cartoonEnable.checked ? 'block' : 'none';
 
     navigator.mediaDevices.getUserMedia({ video: true, audio: false })
         .then(function(stream) {
@@ -79,67 +69,58 @@ function startApp() {
             let begin = Date.now();
             cap.read(src);
 
-            if (cartoonEnable.checked) {
-                const diameter = parseInt(cartoonDiameterSlider.value);
-                const sigmaColor = parseInt(cartoonSigmaColorSlider.value);
-                const sigmaSpace = parseInt(cartoonSigmaSpaceSlider.value);
-                window.snapFilters.applyCartoonEffect(src, dst, diameter, sigmaColor, sigmaSpace);
-                cv.imshow('canvasOutput', dst);
+            let blurred = new cv.Mat();
+            let processed = new cv.Mat();
 
+            // 1. Apply blur if enabled
+            if (blurEnable.checked) {
+                let kernelSize = parseInt(blurKernelSlider.value);
+                window.snapFilters.applyBoxBlur(src, blurred, kernelSize);
+            } else if (gaussianBlurEnable.checked) {
+                let kernelSize = parseInt(gaussianBlurKernelSlider.value);
+                let sigmaX = parseFloat(gaussianBlurSigmaXSlider.value);
+                let sigmaY = parseFloat(gaussianBlurSigmaYSlider.value);
+                window.snapFilters.applyGaussianBlur(src, blurred, kernelSize, sigmaX, sigmaY);
             } else {
-
-                let blurred = new cv.Mat();
-                let processed = new cv.Mat();
-    
-                // 1. Apply blur if enabled
-                if (blurEnable.checked) {
-                    let kernelSize = parseInt(blurKernelSlider.value);
-                    window.snapFilters.applyBoxBlur(src, blurred, kernelSize);
-                } else if (gaussianBlurEnable.checked) {
-                    let kernelSize = parseInt(gaussianBlurKernelSlider.value);
-                    let sigmaX = parseFloat(gaussianBlurSigmaXSlider.value);
-                    let sigmaY = parseFloat(gaussianBlurSigmaYSlider.value);
-                    window.snapFilters.applyGaussianBlur(src, blurred, kernelSize, sigmaX, sigmaY);
-                } else {
-                    src.copyTo(blurred);
-                }
-    
-                // 2. Apply either edge detection or sharpen to the (potentially) blurred image
-                if (edgeEnable.checked) {
-                    const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
-                    if (edgeMethod === 'sobel') {
-                        const sobelDirection = document.querySelector('input[name="sobel-direction"]:checked').value;
-                        window.snapFilters.applySobel(blurred, processed, sobelDirection);
-                    } else if (edgeMethod === 'canny') {
-                        const threshold1 = parseInt(cannyThreshold1Slider.value);
-                        const threshold2 = parseInt(cannyThreshold2Slider.value);
-                        window.snapFilters.applyCanny(blurred, processed, threshold1, threshold2);
-                    }
-                } else if (sharpenEnable.checked) {
-                    window.snapFilters.applySharpen(blurred, processed, parseFloat(sharpenIntensitySlider.value));
-                } else {
-                    blurred.copyTo(processed);
-                }
-                
-                // 3. Apply grayscale if enabled
-                if (grayscaleEnable.checked) {
-                    let temp = new cv.Mat();
-                    window.snapFilters.applyGrayscale(processed, temp);
-                    // If edge detection was not used, convert back to RGBA for consistency
-                    if (!edgeEnable.checked) {
-                        cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
-                    } else {
-                        temp.copyTo(dst);
-                    }
-                    temp.delete();
-                } else {
-                    processed.copyTo(dst);
-                }
-                cv.imshow('canvasOutput', dst);
-                blurred.delete();
-                processed.delete();
+                src.copyTo(blurred);
             }
 
+            // 2. Apply either edge detection or sharpen to the (potentially) blurred image
+            if (edgeEnable.checked) {
+                const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
+                if (edgeMethod === 'sobel') {
+                    const sobelDirection = document.querySelector('input[name="sobel-direction"]:checked').value;
+                    window.snapFilters.applySobel(blurred, processed, sobelDirection);
+                } else if (edgeMethod === 'canny') {
+                    const threshold1 = parseInt(cannyThreshold1Slider.value);
+                    const threshold2 = parseInt(cannyThreshold2Slider.value);
+                    window.snapFilters.applyCanny(blurred, processed, threshold1, threshold2);
+                }
+            } else if (sharpenEnable.checked) {
+                window.snapFilters.applySharpen(blurred, processed, parseFloat(sharpenIntensitySlider.value));
+            } else if (embossEnable.checked) {
+                window.snapFilters.applyEmboss(blurred, processed);
+            } else {
+                blurred.copyTo(processed);
+            }
+            
+            // 3. Apply grayscale if enabled
+            if (grayscaleEnable.checked) {
+                let temp = new cv.Mat();
+                window.snapFilters.applyGrayscale(processed, temp);
+                // If edge detection was not used, convert back to RGBA for consistency
+                if (!edgeEnable.checked) {
+                    cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
+                } else {
+                    temp.copyTo(dst);
+                }
+                temp.delete();
+            } else {
+                processed.copyTo(dst);
+            }
+            cv.imshow('canvasOutput', dst);
+            blurred.delete();
+            processed.delete();
 
             let delay = 1000 / FPS - (Date.now() - begin);
             setTimeout(processVideo, delay);
@@ -158,7 +139,7 @@ function startApp() {
         setTimeout(processVideo, 0);
     });
 
-    const allFilters = [blurEnable, gaussianBlurEnable, sharpenEnable, edgeEnable, grayscaleEnable, cartoonEnable];
+    const allFilters = [blurEnable, gaussianBlurEnable, sharpenEnable, edgeEnable, grayscaleEnable, embossEnable];
 
     function setMutualExclusivity(enabledFilter) {
         allFilters.forEach(filter => {
@@ -235,6 +216,10 @@ function startApp() {
         if (grayscaleEnable.checked) setMutualExclusivity(grayscaleEnable);
     });
 
+    embossEnable.addEventListener('change', () => {
+        if (embossEnable.checked) setMutualExclusivity(embossEnable);
+    });
+
 
     // --- Edge Detection Event Listeners ---
 
@@ -261,37 +246,6 @@ function startApp() {
 
     cannyThreshold2Slider.addEventListener('input', () => {
         cannyThreshold2Value.textContent = cannyThreshold2Slider.value;
-    });
-
-    // --- Cartoon Effect Event Listeners ---
-
-    cartoonEnable.addEventListener('change', () => {
-        if (cartoonEnable.checked) setMutualExclusivity(cartoonEnable);
-        cartoonControls.style.display = cartoonEnable.checked ? 'block' : 'none';
-    });
-
-    cartoonDiameterSlider.addEventListener('input', () => {
-        if (!cartoonEnable.checked) {
-            cartoonEnable.checked = true;
-            cartoonEnable.dispatchEvent(new Event('change'));
-        }
-        cartoonDiameterValue.textContent = cartoonDiameterSlider.value;
-    });
-
-    cartoonSigmaColorSlider.addEventListener('input', () => {
-        if (!cartoonEnable.checked) {
-            cartoonEnable.checked = true;
-            cartoonEnable.dispatchEvent(new Event('change'));
-        }
-        cartoonSigmaColorValue.textContent = cartoonSigmaColorSlider.value;
-    });
-
-    cartoonSigmaSpaceSlider.addEventListener('input', () => {
-        if (!cartoonEnable.checked) {
-            cartoonEnable.checked = true;
-            cartoonEnable.dispatchEvent(new Event('change'));
-        }
-        cartoonSigmaSpaceValue.textContent = cartoonSigmaSpaceSlider.value;
     });
 
     // Trigger change to set initial visibility of controls

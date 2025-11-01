@@ -84,6 +84,22 @@ window.snapFilters = {
         gray.delete();
         edges.delete();
     },
+    /**
+     * Applies an emboss effect to an image.
+     * @param {cv.Mat} src - The source image (cv.Mat).
+     * @param {cv.Mat} dst - The destination image (cv.Mat).
+     */
+    applyEmboss: function(src, dst) {
+        let gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        let kernel = cv.matFromArray(3, 3, cv.CV_32FC1, [-2, -1, 0, -1, 1, 1, 0, 1, 2]);
+        let embossed = new cv.Mat();
+        cv.filter2D(gray, embossed, -1, kernel, new cv.Point(-1, -1), 128, cv.BORDER_DEFAULT);
+        cv.cvtColor(embossed, dst, cv.COLOR_GRAY2RGBA);
+        gray.delete();
+        embossed.delete();
+        kernel.delete();
+    },
 
     /**
      * Converts an image to grayscale.

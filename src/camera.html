@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapFilter - Real-time Camera</title>
+    <title>SnapFilter - Real-Time Camera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,19 +12,21 @@
     <a href="index.html" class="absolute top-4 left-4 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition-colors">Back</a>
 
     <div class="container mx-auto px-4 py-12">
+
         <div class="text-center mb-12">
             <h1 class="text-5xl font-extrabold mb-4">
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
-                    Real-time Camera
+                    Real-Time Camera Filtering
                 </span>
             </h1>
-            <p class="text-lg text-gray-400">Apply filters to your camera feed in real-time.</p>
+            <p class="text-lg text-gray-400">Apply filters to your live camera feed.</p>
         </div>
 
         <div class="flex flex-col md:flex-row gap-8">
             <div class="w-full md:w-1/3">
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 class="text-3xl font-bold text-center mb-6">Filters</h2>
+
                     <div class="flex items-center justify-between">
                         <label class="flex items-center space-x-3">
                             <input type="checkbox" id="blur-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
@@ -68,6 +70,12 @@
                         <label class="flex items-center space-x-3">
                             <input type="checkbox" id="grayscale-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
                             <span class="text-lg font-bold">Grayscale</span>
+                        </label>
+                    </div>
+                    <div class="mt-6 border-t border-gray-700 pt-6">
+                        <label class="flex items-center space-x-3">
+                            <input type="checkbox" id="emboss-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
+                            <span class="text-lg font-bold">Emboss</span>
                         </label>
                     </div>
 
@@ -119,51 +127,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mt-6 border-t border-gray-700 pt-6">
-                        <h3 class="text-2xl font-bold text-center mb-4">Creative Filters</h3>
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" id="cartoon-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                                <span class="text-lg font-bold">Cartoon Effect</span>
-                            </label>
-                        </div>
-                        <div id="cartoon-controls" class="mt-4 hidden">
-                            <div class="flex items-center justify-between mt-4">
-                                <span class="text-lg">Diameter</span>
-                                <span id="cartoon-diameter-value" class="text-lg">9</span>
-                            </div>
-                            <input type="range" id="cartoon-diameter" min="1" max="15" step="1" value="9" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                            <div class="flex items-center justify-between mt-4">
-                                <span class="text-lg">Sigma Color</span>
-                                <span id="cartoon-sigma-color-value" class="text-lg">75</span>
-                            </div>
-                            <input type="range" id="cartoon-sigma-color" min="1" max="200" step="1" value="75" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                            <div class="flex items-center justify-between mt-4">
-                                <span class="text-lg">Sigma Space</span>
-                                <span id="cartoon-sigma-space-value" class="text-lg">75</span>
-                            </div>
-                            <input type="range" id="cartoon-sigma-space" min="1" max="200" step="1" value="75" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div class="w-full md:w-2/3">
                 <div class="grid md:grid-cols-2 gap-8">
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h2 class="text-2xl font-bold mb-4 text-center">Camera Feed</h2>
-                        <video id="videoInput" width="640" height="480" autoplay class="w-full h-auto rounded-md"></video>
+                        <h2 class="text-2xl font-bold mb-4 text-center">Original Feed</h2>
+                        <video id="videoInput" playsinline autoplay class="w-full h-auto rounded-md"></video>
                     </div>
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                         <h2 class="text-2xl font-bold mb-4 text-center">Filtered Feed</h2>
-                        <canvas id="canvasOutput" width="640" height="480" class="w-full h-auto rounded-md"></canvas>
+                        <canvas id="canvasOutput" class="w-full h-auto rounded-md"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script src="js/cv.js"></script>

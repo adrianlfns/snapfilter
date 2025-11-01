@@ -45,6 +45,9 @@ function startApp() {
         grayscale: {
             enable: document.getElementById('grayscale-enable'),
         },
+        emboss: {
+            enable: document.getElementById('emboss-enable'),
+        },
         edge: {
             enable: document.getElementById('edge-enable'),
             controls: document.getElementById('edge-controls'),
@@ -64,7 +67,8 @@ function startApp() {
         controls.gaussianBlur.enable,
         controls.sharpen.enable,
         controls.edge.enable,
-        controls.grayscale.enable
+        controls.grayscale.enable,
+        controls.emboss.enable
     ];
 
     // --- Core Functions ---
@@ -119,6 +123,9 @@ function startApp() {
             const intensity = parseFloat(controls.sharpen.intensitySlider.value);
             return (src, dst) => window.snapFilters.applySharpen(src, dst, intensity);
         }
+        if (controls.emboss.enable.checked) {
+            return (src, dst) => window.snapFilters.applyEmboss(src, dst);
+        }
         if (controls.edge.enable.checked) {
             const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
             if (edgeMethod === 'sobel') {
@@ -138,6 +145,7 @@ function startApp() {
         if (controls.blur.enable.checked) return 'blur';
         if (controls.gaussianBlur.enable.checked) return 'gaussian';
         if (controls.sharpen.enable.checked) return 'sharpen';
+        if (controls.emboss.enable.checked) return 'emboss';
         if (controls.edge.enable.checked) return 'edge';
         return null;
     }
@@ -271,6 +279,13 @@ function startApp() {
             applyFilters();
         });
 
+        // Emboss
+        controls.emboss.enable.addEventListener('change', () => {
+            if (controls.emboss.enable.checked) {
+                setMutualExclusivity(controls.emboss.enable);
+            }
+            applyFilters();
+        });
 
         // Edge Detection
         controls.edge.enable.addEventListener('change', () => {

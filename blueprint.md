@@ -33,7 +33,7 @@ The project follows a simple structure to keep the code organized:
 
 *   **Image Upload:** Users can upload an image from their local machine and download the filtered result.
 *   **Real-time Camera Filtering:** Users can use their camera to apply filters in real-time.
-*   **Filter Selection:** A selection of filters is available, including Box Blur, Gaussian Blur, Sharpen, Grayscale, and Edge Detection.
+*   **Filter Selection:** A selection of filters is available, including Box Blur, Gaussian Blur, Sharpen, Grayscale, Emboss, and Edge Detection.
 *   **Adjustable Filters:** Filters have parameters that can be adjusted by the user in real-time.
 *   **Real-time Preview:** The filtered image or video feed is displayed in real-time.
 
