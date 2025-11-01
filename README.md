@@ -43,3 +43,7 @@ SnapFilter is a modern, framework-less web application that allows you to apply 
 - **Tailwind CSS**
 - **JavaScript (ES6+)**
 - **OpenCV.js** - For all image processing and computer vision operations.
+
+## Demo app
+
+https://adrianlfns.github.io/snapfilter/
