@@ -14,9 +14,7 @@ The project follows a simple structure to keep the code organized:
     *   `camera.html`: The page for real-time camera filtering.
     *   `js/`: Contains the JavaScript files.
         *   `upload.js`: Logic for the image upload page.
-        *   `camera.js`: Logic for the real-time camera page.
-        *   `cv.js`: The OpenCV.js library.
-        *   `utils.js`: Utility functions for OpenCV.
+        *   `camera.js`: Logic for the real-time camera page.  
         *   `filters.js`: Contains the core filter logic.
     *   `css/`: Contains the stylesheets.
         *   `style.css`: Custom styles for the application.
