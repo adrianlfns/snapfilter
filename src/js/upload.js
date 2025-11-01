@@ -1,141 +1,171 @@
-let inputElement = document.getElementById('fileInput');
-let canvasInput = document.getElementById('canvasInput');
-let canvasOutput = document.getElementById('canvasOutput');
-let ctxInput = canvasInput.getContext('2d');
-let downloadBtn = document.getElementById('downloadBtn');
+document.addEventListener('DOMContentLoaded', () => {
+    const script = document.createElement('script');
+    script.src = 'https://docs.opencv.org/4.x/opencv.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
 
-// Filter controls
-let blurEnable = document.getElementById('blur-enable');
-let blurKernelSlider = document.getElementById('blur-kernel-size');
-let blurKernelValue = document.getElementById('blur-kernel-value');
-
-let gaussianBlurEnable = document.getElementById('gaussian-blur-enable');
-let gaussianBlurKernelSlider = document.getElementById('gaussian-blur-kernel-size');
-let gaussianBlurKernelValue = document.getElementById('gaussian-blur-kernel-value');
-let gaussianBlurSigmaXSlider = document.getElementById('gaussian-blur-sigma-x');
-let gaussianBlurSigmaXValue = document.getElementById('gaussian-blur-sigma-x-value');
-let gaussianBlurSigmaYSlider = document.getElementById('gaussian-blur-sigma-y');
-let gaussianBlurSigmaYValue = document.getElementById('gaussian-blur-sigma-y-value');
-
-let sharpenEnable = document.getElementById('sharpen-enable');
-let sharpenIntensitySlider = document.getElementById('sharpen-intensity');
-let sharpenIntensityValue = document.getElementById('sharpen-intensity-value');
-
-let grayscaleEnable = document.getElementById('grayscale-enable');
-
-// Edge Detection Controls
-let edgeEnable = document.getElementById('edge-enable');
-let edgeControls = document.getElementById('edge-controls');
-let sobelControls = document.getElementById('sobel-controls');
-let cannyControls = document.getElementById('canny-controls');
-let edgeMethodRadios = document.querySelectorAll('input[name="edge-method"]');
-let sobelDirectionRadios = document.querySelectorAll('input[name="sobel-direction"]');
-let cannyThreshold1Slider = document.getElementById('canny-threshold1');
-let cannyThreshold1Value = document.getElementById('canny-threshold1-value');
-let cannyThreshold2Slider = document.getElementById('canny-threshold2');
-let cannyThreshold2Value = document.getElementById('canny-threshold2-value');
+    script.onload = () => {
+        cv.onRuntimeInitialized = () => {
+            console.log('OpenCV Ready');
+            startApp();
+        };
+    };
+});
 
 function startApp() {
-    console.log('OpenCV Ready for Upload');
+    // --- DOM Element Selection ---
+    const inputElement = document.getElementById('fileInput');
+    const canvasInput = document.getElementById('canvasInput');
+    const canvasOutput = document.getElementById('canvasOutput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const ctxInput = canvasInput.getContext('2d');
 
-    // Initial UI state
-    blurKernelSlider.style.opacity = blurEnable.checked ? '1' : '0.5';
-    gaussianBlurKernelSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    gaussianBlurSigmaXSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    gaussianBlurSigmaYSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    sharpenIntensitySlider.style.opacity = sharpenEnable.checked ? '1' : '0.5';
-    edgeControls.style.display = edgeEnable.checked ? 'block' : 'none';
+    // --- Filter Controls ---
+    const controls = {
+        blur: {
+            enable: document.getElementById('blur-enable'),
+            kernelSlider: document.getElementById('blur-kernel-size'),
+            kernelValue: document.getElementById('blur-kernel-value'),
+        },
+        gaussianBlur: {
+            enable: document.getElementById('gaussian-blur-enable'),
+            kernelSlider: document.getElementById('gaussian-blur-kernel-size'),
+            kernelValue: document.getElementById('gaussian-blur-kernel-value'),
+            sigmaXSlider: document.getElementById('gaussian-blur-sigma-x'),
+            sigmaXValue: document.getElementById('gaussian-blur-sigma-x-value'),
+            sigmaYSlider: document.getElementById('gaussian-blur-sigma-y'),
+            sigmaYValue: document.getElementById('gaussian-blur-sigma-y-value'),
+        },
+        sharpen: {
+            enable: document.getElementById('sharpen-enable'),
+            intensitySlider: document.getElementById('sharpen-intensity'),
+            intensityValue: document.getElementById('sharpen-intensity-value'),
+        },
+        grayscale: {
+            enable: document.getElementById('grayscale-enable'),
+        },
+        edge: {
+            enable: document.getElementById('edge-enable'),
+            controls: document.getElementById('edge-controls'),
+            sobelControls: document.getElementById('sobel-controls'),
+            cannyControls: document.getElementById('canny-controls'),
+            methodRadios: document.querySelectorAll('input[name="edge-method"]'),
+            sobelDirectionRadios: document.querySelectorAll('input[name="sobel-direction"]'),
+            cannyThreshold1Slider: document.getElementById('canny-threshold1'),
+            cannyThreshold1Value: document.getElementById('canny-threshold1-value'),
+            cannyThreshold2Slider: document.getElementById('canny-threshold2'),
+            cannyThreshold2Value: document.getElementById('canny-threshold2-value'),
+        },
+    };
 
+    const allFilters = [
+        controls.blur.enable,
+        controls.gaussianBlur.enable,
+        controls.sharpen.enable,
+        controls.edge.enable,
+        controls.grayscale.enable
+    ];
+
+    // --- Core Functions ---
 
     function applyFilters() {
-        if (!canvasInput.width || !canvasInput.height) {
-            return;
-        }
+        if (!canvasInput.width || !canvasInput.height) return;
 
-        let src = cv.imread(canvasInput);
+        const src = cv.imread(canvasInput);
         let dst = new cv.Mat();
-
-        let blurred = new cv.Mat();
         let processed = new cv.Mat();
 
-        // 1. Apply blur if enabled
-        if (blurEnable.checked) {
-            let kernelSize = parseInt(blurKernelSlider.value);
-            window.snapFilters.applyBoxBlur(src, blurred, kernelSize);
-        } else if (gaussianBlurEnable.checked) {
-            let kernelSize = parseInt(gaussianBlurKernelSlider.value);
-            let sigmaX = parseFloat(gaussianBlurSigmaXSlider.value);
-            let sigmaY = parseFloat(gaussianBlurSigmaYSlider.value);
-            window.snapFilters.applyGaussianBlur(src, blurred, kernelSize, sigmaX, sigmaY);
-        } else {
-            src.copyTo(blurred);
-        }
+        try {
+            const activeFilter = getActiveFilter();
+            if (activeFilter) {
+                activeFilter(src, processed);
+            } else {
+                src.copyTo(processed);
+            }
 
-        // 2. Apply either edge detection or sharpen to the (potentially) blurred image
-        if (edgeEnable.checked) {
+            if (controls.grayscale.enable.checked && getActiveFilterName() !== 'edge') {
+                 const temp = new cv.Mat();
+                 window.snapFilters.applyGrayscale(processed, temp);
+                 cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
+                 temp.delete();
+            } else if (controls.grayscale.enable.checked) {
+                window.snapFilters.applyGrayscale(processed, dst);
+            }
+             else {
+                processed.copyTo(dst);
+            }
+
+            cv.imshow('canvasOutput', dst);
+        } finally {
+            src.delete();
+            dst.delete();
+            processed.delete();
+        }
+    }
+
+    function getActiveFilter() {
+        if (controls.blur.enable.checked) {
+            const kernelSize = parseInt(controls.blur.kernelSlider.value);
+            return (src, dst) => window.snapFilters.applyBoxBlur(src, dst, kernelSize);
+        }
+        if (controls.gaussianBlur.enable.checked) {
+            const kernelSize = parseInt(controls.gaussianBlur.kernelSlider.value);
+            const sigmaX = parseFloat(controls.gaussianBlur.sigmaXSlider.value);
+            const sigmaY = parseFloat(controls.gaussianBlur.sigmaYSlider.value);
+            return (src, dst) => window.snapFilters.applyGaussianBlur(src, dst, kernelSize, sigmaX, sigmaY);
+        }
+        if (controls.sharpen.enable.checked) {
+            const intensity = parseFloat(controls.sharpen.intensitySlider.value);
+            return (src, dst) => window.snapFilters.applySharpen(src, dst, intensity);
+        }
+        if (controls.edge.enable.checked) {
             const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
             if (edgeMethod === 'sobel') {
                 const sobelDirection = document.querySelector('input[name="sobel-direction"]:checked').value;
-                window.snapFilters.applySobel(blurred, processed, sobelDirection);
-            } else if (edgeMethod === 'canny') {
-                const threshold1 = parseInt(cannyThreshold1Slider.value);
-                const threshold2 = parseInt(cannyThreshold2Slider.value);
-                window.snapFilters.applyCanny(blurred, processed, threshold1, threshold2);
+                return (src, dst) => window.snapFilters.applySobel(src, dst, sobelDirection);
             }
-        } else if (sharpenEnable.checked) {
-            window.snapFilters.applySharpen(blurred, processed, parseFloat(sharpenIntensitySlider.value));
-        } else {
-            blurred.copyTo(processed);
-        }
-
-        // 3. Apply grayscale if enabled
-        if (grayscaleEnable.checked) {
-            let temp = new cv.Mat();
-            window.snapFilters.applyGrayscale(processed, temp);
-            // If edge detection was not used, convert back to RGBA for consistency
-            if (!edgeEnable.checked) {
-                cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
-            } else {
-                temp.copyTo(dst);
+            if (edgeMethod === 'canny') {
+                const threshold1 = parseInt(controls.edge.cannyThreshold1Slider.value);
+                const threshold2 = parseInt(controls.edge.cannyThreshold2Slider.value);
+                return (src, dst) => window.snapFilters.applyCanny(src, dst, threshold1, threshold2);
             }
-            temp.delete();
-        } else {
-            processed.copyTo(dst);
         }
-
-
-        cv.imshow('canvasOutput', dst);
-        src.delete();
-        blurred.delete();
-        processed.delete();
-        dst.delete();
+        return null; // No filter enabled
+    }
+    
+    function getActiveFilterName() {
+        if (controls.blur.enable.checked) return 'blur';
+        if (controls.gaussianBlur.enable.checked) return 'gaussian';
+        if (controls.sharpen.enable.checked) return 'sharpen';
+        if (controls.edge.enable.checked) return 'edge';
+        return null;
     }
 
-    inputElement.addEventListener('change', (e) => {
-        let reader = new FileReader();
-        reader.onload = function(event) {
-            let img = new Image();
-            img.onload = function() {
+
+    function handleImageUpload(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
                 canvasInput.width = img.width;
                 canvasInput.height = img.height;
                 canvasOutput.width = img.width;
                 canvasOutput.height = img.height;
                 ctxInput.drawImage(img, 0, 0, img.width, img.height);
                 applyFilters();
-            }
-            img.src = event.target.result;
-        }
-        reader.readAsDataURL(e.target.files[0]);
-    }, false);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
 
-    downloadBtn.addEventListener('click', () => {
+    function downloadImage() {
         const link = document.createElement('a');
         link.download = 'filtered-image.png';
         link.href = canvasOutput.toDataURL();
         link.click();
-    });
-
-    const allFilters = [blurEnable, gaussianBlurEnable, sharpenEnable, edgeEnable, grayscaleEnable];
+    }
 
     function setMutualExclusivity(enabledFilter) {
         allFilters.forEach(filter => {
@@ -146,126 +176,138 @@ function startApp() {
         });
     }
 
-    blurEnable.addEventListener('change', () => {
-        if (blurEnable.checked) setMutualExclusivity(blurEnable);
-        blurKernelSlider.style.opacity = blurEnable.checked ? '1' : '0.5';
-        applyFilters();
-    });
+    function setupEventListeners() {
+        inputElement.addEventListener('change', handleImageUpload);
+        downloadBtn.addEventListener('click', downloadImage);
 
-    blurKernelSlider.addEventListener('input', () => {
-        if (!blurEnable.checked) {
-            blurEnable.checked = true;
-            blurEnable.dispatchEvent(new Event('change'));
-        }
-        let kernelSize = parseInt(blurKernelSlider.value);
-        let displayKernel = kernelSize % 2 === 0 ? kernelSize + 1 : kernelSize;
-        blurKernelValue.textContent = `${displayKernel}x${displayKernel}`;
-        applyFilters();
-    });
+        // --- Filter Event Listeners ---
 
-    gaussianBlurEnable.addEventListener('change', () => {
-        if (gaussianBlurEnable.checked) setMutualExclusivity(gaussianBlurEnable);
-        const opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-        gaussianBlurKernelSlider.style.opacity = opacity;
-        gaussianBlurSigmaXSlider.style.opacity = opacity;
-        gaussianBlurSigmaYSlider.style.opacity = opacity;
-        applyFilters();
-    });
-
-    gaussianBlurKernelSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        let kernelSize = parseInt(gaussianBlurKernelSlider.value);
-        let displayKernel = kernelSize % 2 === 0 ? kernelSize + 1 : kernelSize;
-        gaussianBlurKernelValue.textContent = `${displayKernel}x${displayKernel}`;
-        applyFilters();
-    });
-
-    gaussianBlurSigmaXSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        gaussianBlurSigmaXValue.textContent = parseFloat(gaussianBlurSigmaXSlider.value).toFixed(1);
-        applyFilters();
-    });
-
-    gaussianBlurSigmaYSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        gaussianBlurSigmaYValue.textContent = parseFloat(gaussianBlurSigmaYSlider.value).toFixed(1);
-        applyFilters();
-    });
-
-    sharpenEnable.addEventListener('change', () => {
-        if (sharpenEnable.checked) setMutualExclusivity(sharpenEnable);
-        sharpenIntensitySlider.style.opacity = sharpenEnable.checked ? '1' : '0.5';
-        applyFilters();
-    });
-
-    sharpenIntensitySlider.addEventListener('input', () => {
-        if (!sharpenEnable.checked) {
-            sharpenEnable.checked = true;
-            sharpenEnable.dispatchEvent(new Event('change'));
-        }
-        sharpenIntensityValue.textContent = parseFloat(sharpenIntensitySlider.value).toFixed(1);
-        applyFilters();
-    });
-
-    grayscaleEnable.addEventListener('change', () => {
-        if (grayscaleEnable.checked) setMutualExclusivity(grayscaleEnable);
-        applyFilters();
-    });
-
-    // --- Edge Detection Event Listeners ---
-
-    edgeEnable.addEventListener('change', () => {
-        if (edgeEnable.checked) setMutualExclusivity(edgeEnable);
-        edgeControls.style.display = edgeEnable.checked ? 'block' : 'none';
-        applyFilters();
-    });
-
-    edgeMethodRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            const sobelVisible = document.getElementById('edge-method-sobel').checked;
-            sobelControls.style.display = sobelVisible ? 'block' : 'none';
-            cannyControls.style.display = sobelVisible ? 'none' : 'block';
-            applyFilters();
-        });
-    });
-
-    sobelDirectionRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            applyFilters();
-        });
-    });
-
-    cannyThreshold1Slider.addEventListener('input', () => {
-        cannyThreshold1Value.textContent = cannyThreshold1Slider.value;
-        applyFilters();
-    });
-
-    cannyThreshold2Slider.addEventListener('input', () => {
-        cannyThreshold2Value.textContent = cannyThreshold2Slider.value;
-        applyFilters();
-    });
-
-    // Trigger change to set initial visibility of controls
-    document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
-}
-
-
-(function() {
-    const script = document.createElement('script');
-    script.src = 'https://docs.opencv.org/4.x/opencv.js';
-    script.onload = () => {
-        cv.onRuntimeInitialized = () => {
-            startApp();
+        // Generic handler for simple enable/disable
+        const setupSimpleFilter = (control) => {
+            control.enable.addEventListener('change', () => {
+                if (control.enable.checked) setMutualExclusivity(control.enable);
+                if (control.slider) {
+                    control.slider.style.opacity = control.enable.checked ? '1' : '0.5';
+                }
+                applyFilters();
+            });
         };
-    };
-    document.head.appendChild(script);
-})();
+
+        // Box Blur
+        controls.blur.enable.addEventListener('change', () => {
+            if (controls.blur.enable.checked) setMutualExclusivity(controls.blur.enable);
+            controls.blur.kernelSlider.style.opacity = controls.blur.enable.checked ? '1' : '0.5';
+            applyFilters();
+        });
+        controls.blur.kernelSlider.addEventListener('input', () => {
+             if (!controls.blur.enable.checked) {
+                controls.blur.enable.checked = true;
+                controls.blur.enable.dispatchEvent(new Event('change'));
+            }
+            const kernelSize = parseInt(controls.blur.kernelSlider.value);
+            controls.blur.kernelValue.textContent = `${kernelSize}x${kernelSize}`;
+            applyFilters();
+        });
+        
+        // Gaussian Blur
+        controls.gaussianBlur.enable.addEventListener('change', () => {
+            if (controls.gaussianBlur.enable.checked) setMutualExclusivity(controls.gaussianBlur.enable);
+            const opacity = controls.gaussianBlur.enable.checked ? '1' : '0.5';
+            controls.gaussianBlur.kernelSlider.style.opacity = opacity;
+            controls.gaussianBlur.sigmaXSlider.style.opacity = opacity;
+            controls.gaussianBlur.sigmaYSlider.style.opacity = opacity;
+            applyFilters();
+        });
+         controls.gaussianBlur.kernelSlider.addEventListener('input', () => {
+             if (!controls.gaussianBlur.enable.checked) {
+                controls.gaussianBlur.enable.checked = true;
+                controls.gaussianBlur.enable.dispatchEvent(new Event('change'));
+            }
+            const kernelSize = parseInt(controls.gaussianBlur.kernelSlider.value);
+            controls.gaussianBlur.kernelValue.textContent = `${kernelSize}x${kernelSize}`;
+            applyFilters();
+        });
+        controls.gaussianBlur.sigmaXSlider.addEventListener('input', () => {
+            if (!controls.gaussianBlur.enable.checked) {
+                controls.gaussianBlur.enable.checked = true;
+                controls.gaussianBlur.enable.dispatchEvent(new Event('change'));
+            }
+            controls.gaussianBlur.sigmaXValue.textContent = parseFloat(controls.gaussianBlur.sigmaXSlider.value).toFixed(1);
+            applyFilters();
+        });
+        controls.gaussianBlur.sigmaYSlider.addEventListener('input', () => {
+            if (!controls.gaussianBlur.enable.checked) {
+                controls.gaussianBlur.enable.checked = true;
+                controls.gaussianBlur.enable.dispatchEvent(new Event('change'));
+            }
+            controls.gaussianBlur.sigmaYValue.textContent = parseFloat(controls.gaussianBlur.sigmaYSlider.value).toFixed(1);
+            applyFilters();
+        });
+
+        // Sharpen
+        controls.sharpen.enable.addEventListener('change', () => {
+            if (controls.sharpen.enable.checked) setMutualExclusivity(controls.sharpen.enable);
+            controls.sharpen.intensitySlider.style.opacity = controls.sharpen.enable.checked ? '1' : '0.5';
+            applyFilters();
+        });
+        controls.sharpen.intensitySlider.addEventListener('input', () => {
+            if (!controls.sharpen.enable.checked) {
+                controls.sharpen.enable.checked = true;
+                controls.sharpen.enable.dispatchEvent(new Event('change'));
+            }
+            controls.sharpen.intensityValue.textContent = parseFloat(controls.sharpen.intensitySlider.value).toFixed(1);
+            applyFilters();
+        });
+        
+        // Grayscale
+        controls.grayscale.enable.addEventListener('change', () => {
+             if (controls.grayscale.enable.checked) {
+                // Grayscale can be combined with other filters, so it's not mutually exclusive
+                const anyOtherFilterActive = allFilters.some(f => f.checked && f !== controls.grayscale.enable);
+                if (!anyOtherFilterActive) {
+                    // If no other filter is active, we can just apply grayscale
+                }
+            }
+            applyFilters();
+        });
+
+
+        // Edge Detection
+        controls.edge.enable.addEventListener('change', () => {
+            if (controls.edge.enable.checked) setMutualExclusivity(controls.edge.enable);
+            controls.edge.controls.style.display = controls.edge.enable.checked ? 'block' : 'none';
+            applyFilters();
+        });
+        controls.edge.methodRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const sobelVisible = document.getElementById('edge-method-sobel').checked;
+                controls.edge.sobelControls.style.display = sobelVisible ? 'block' : 'none';
+                controls.edge.cannyControls.style.display = sobelVisible ? 'none' : 'block';
+                applyFilters();
+            });
+        });
+        controls.edge.sobelDirectionRadios.forEach(radio => radio.addEventListener('change', applyFilters));
+        controls.edge.cannyThreshold1Slider.addEventListener('input', () => {
+            controls.edge.cannyThreshold1Value.textContent = controls.edge.cannyThreshold1Slider.value;
+            applyFilters();
+        });
+        controls.edge.cannyThreshold2Slider.addEventListener('input', () => {
+            controls.edge.cannyThreshold2Value.textContent = controls.edge.cannyThreshold2Slider.value;
+            applyFilters();
+        });
+    }
+    
+    function initializeUI() {
+        controls.blur.kernelSlider.style.opacity = '0.5';
+        controls.gaussianBlur.kernelSlider.style.opacity = '0.5';
+        controls.gaussianBlur.sigmaXSlider.style.opacity = '0.5';
+        controls.gaussianBlur.sigmaYSlider.style.opacity = '0.5';
+        controls.sharpen.intensitySlider.style.opacity = '0.5';
+        controls.edge.controls.style.display = 'none';
+        document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
+    }
+
+    // --- Initialization ---
+    initializeUI();
+    setupEventListeners();
+}

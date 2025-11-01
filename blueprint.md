@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the plan for creating a web-based photo filter application named **SnapFilter**. The application will allow users to apply various filters to images from a file upload or a real-time camera feed using the OpenCV.js library.
+This document outlines the plan for creating a web-based photo filter application named **SnapFilter**. The application allows users to apply various filters to images from a file upload or a real-time camera feed using the OpenCV.js library.
 
 ## Project Structure
 
@@ -39,11 +39,12 @@ The project follows a simple structure to keep the code organized:
 *   **Adjustable Filters:** Filters have parameters that can be adjusted by the user in real-time.
 *   **Real-time Preview:** The filtered image or video feed is displayed in real-time.
 
-## Current Plan: Add Cartoon Effect Filter
+## Code Quality and Documentation Refinements
 
-I will now add a creative **Cartoon Effect** filter to the application. This will be a new, configurable filter that gives images a stylized, cartoonish appearance.
+I have completed a comprehensive review of the project's code quality and documentation, implementing the following improvements:
 
-1.  **Update `filters.js`:**
-    *   Implement an `applyCartoonEffect` function. This will use a combination of bilateral filtering (to smooth colors while preserving edges) and adaptive thresholding (to create sharp outlines).
-2.  **Update HTML:** Add a new "Creative Filters" section to `upload.html` and `camera.html` with a checkbox to enable the cartoon effect and sliders for its parameters (diameter, sigma color, sigma space).
-3.  **Update JavaScript Logic:** Modify `upload.js` and `camera.js` to incorporate the new filter. The cartoon effect will be mutually exclusive with the existing filters to prevent conflicts.
+*   **Refactored `upload.js`:** The main `startApp` function in `upload.js` has been broken down into smaller, more focused functions for event listener setup and UI updates. This enhances readability and maintainability.
+
+*   **Enhanced Documentation in `filters.js`:** I have added detailed JSDoc-style comments to each function in the `filters.js` file, explaining each filter's purpose, parameters, and functionality. This makes the filter library more accessible and easier to extend.
+
+*   **Removed Cartoon Effect:** The previously implemented cartoon effect has been removed from the application due to persistent errors. The UI and underlying logic for this feature have been completely removed from the codebase.
