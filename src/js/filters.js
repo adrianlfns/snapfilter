@@ -6,7 +6,10 @@ window.snapFilters = {
      * @param {number} kernelSize - The size of the blur kernel.
      */
     applyBoxBlur: function(src, dst, kernelSize) {
+        //builds a kernel size 3 by 3 or 5 by 5, etc. Depending on the variable kernelSize.
         let ksize = new cv.Size(kernelSize, kernelSize);
+
+        //convenient method in opencv for box blur 
         cv.blur(src, dst, ksize, new cv.Point(-1, -1), cv.BORDER_DEFAULT);
     },
 
@@ -19,7 +22,11 @@ window.snapFilters = {
      * @param {number} sigmaY - The standard deviation in the Y direction.
      */
     applyGaussianBlur: function(src, dst, kernelSize, sigmaX, sigmaY) {
+
+        //builds a kernel size 3 by 3 or 5 by 5, etc. Depending on the variable kernelSize.
         let ksize = new cv.Size(kernelSize, kernelSize);
+
+        //convenient method in opencv for gaussianBlur
         cv.GaussianBlur(src, dst, ksize, sigmaX, sigmaY, cv.BORDER_DEFAULT);
     },
 
@@ -30,6 +37,7 @@ window.snapFilters = {
      * @param {number} intensity - The intensity of the sharpening effect.
      */
     applySharpen: function(src, dst, intensity) {
+        
         let blurred = new cv.Mat();
         let ksize = new cv.Size(5, 5);
         cv.GaussianBlur(src, blurred, ksize, 0, 0, cv.BORDER_DEFAULT);
