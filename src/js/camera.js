@@ -1,153 +1,147 @@
-const video = document.getElementById('videoInput');
-const canvasOutput = document.getElementById('canvasOutput');
-const statusElement = document.getElementById('status');
-const mainContent = document.getElementById('main-content');
+document.addEventListener('DOMContentLoaded', () => {
+    const script = document.createElement('script');
+    script.src = 'https://docs.opencv.org/4.x/opencv.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
 
-const controls = {
-    blur: { enable: document.getElementById('blur-enable'), slider: document.getElementById('blur-kernel-size'), value: document.getElementById('blur-kernel-value') },
-    gaussianBlur: { enable: document.getElementById('gaussian-blur-enable'), kernelSlider: document.getElementById('gaussian-blur-kernel-size'), kernelValue: document.getElementById('gaussian-blur-kernel-value'), sigmaXSlider: document.getElementById('gaussian-blur-sigma-x'), sigmaXValue: document.getElementById('gaussian-blur-sigma-x-value'), sigmaYSlider: document.getElementById('gaussian-blur-sigma-y'), sigmaYValue: document.getElementById('gaussian-blur-sigma-y-value') },
-    sharpen: { enable: document.getElementById('sharpen-enable'), slider: document.getElementById('sharpen-intensity'), value: document.getElementById('sharpen-intensity-value') },
-    grayscale: { enable: document.getElementById('grayscale-enable') },
-    emboss: { enable: document.getElementById('emboss-enable') },
-    pencilSketch: { enable: document.getElementById('pencil-sketch-enable'), controls: document.getElementById('pencil-sketch-controls'), kernelSlider: document.getElementById('pencil-sketch-kernel-size'), kernelValue: document.getElementById('pencil-sketch-kernel-size-value'), sigmaSpaceSlider: document.getElementById('pencil-sketch-sigma-space'), sigmaSpaceValue: document.getElementById('pencil-sketch-sigma-space-value'), sigmaColorSlider: document.getElementById('pencil-sketch-sigma-color'), sigmaColorValue: document.getElementById('pencil-sketch-sigma-color-value') },
-    edge: { enable: document.getElementById('edge-enable'), controls: document.getElementById('edge-controls'), sobelControls: document.getElementById('sobel-controls'), cannyControls: document.getElementById('canny-controls'), methodRadios: document.querySelectorAll('input[name="edge-method"]'), sobelDirectionRadios: document.querySelectorAll('input[name="sobel-direction"]'), cannyThreshold1Slider: document.getElementById('canny-threshold1'), cannyThreshold1Value: document.getElementById('canny-threshold1-value'), cannyThreshold2Slider: document.getElementById('canny-threshold2'), cannyThreshold2Value: document.getElementById('canny-threshold2-value') }
-};
-
-function setupUI() {
-    const allFilters = Object.values(controls).map(c => c.enable).filter(Boolean);
-    allFilters.forEach(filter => {
-        filter.addEventListener('change', () => {
-            if (filter.checked) {
-                allFilters.forEach(otherFilter => {
-                    if (otherFilter !== filter) { otherFilter.checked = false; otherFilter.dispatchEvent(new Event('change')); }
-                });
-            }
-        });
-    });
-
-    Object.values(controls).forEach(control => {
-        if (!control.enable) return;
-        const container = control.slider?.parentElement || control.controls;
-        control.enable.addEventListener('change', () => {
-            const isChecked = control.enable.checked;
-            if (container) container.style.opacity = isChecked ? '1' : '0.5';
-            if (control.controls) control.controls.style.display = isChecked ? 'block' : 'none';
-        });
-        control.enable.dispatchEvent(new Event('change'));
-    });
-
-    controls.edge.methodRadios.forEach(radio => radio.addEventListener('change', () => {
-        const sobelVisible = document.getElementById('edge-method-sobel').checked;
-        controls.edge.sobelControls.style.display = sobelVisible ? 'block' : 'none';
-        controls.edge.cannyControls.style.display = sobelVisible ? 'none' : 'block';
-    }));
-    document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
-
-    const setupSlider = (slider, valueDisplay, format = val => val) => {
-        if (slider && valueDisplay) {
-            const update = () => { valueDisplay.textContent = format(slider.value); };
-            slider.addEventListener('input', update);
-            update();
-        }
+    script.onload = () => {
+        cv.onRuntimeInitialized = () => {
+            console.log('OpenCV Ready');
+            startApp();
+        };
     };
-    const formatKernel = val => { let k = parseInt(val); k = k % 2 ? k : k + 1; return `${k}x${k}`; };
-    setupSlider(controls.blur.slider, controls.blur.value, formatKernel);
-    setupSlider(controls.gaussianBlur.kernelSlider, controls.gaussianBlur.kernelValue, formatKernel);
-    setupSlider(controls.gaussianBlur.sigmaXSlider, controls.gaussianBlur.sigmaXValue, val => parseFloat(val).toFixed(1));
-    setupSlider(controls.gaussianBlur.sigmaYSlider, controls.gaussianBlur.sigmaYValue, val => parseFloat(val).toFixed(1));
-    setupSlider(controls.sharpen.slider, controls.sharpen.value, val => parseFloat(val).toFixed(1));
-    setupSlider(controls.pencilSketch.kernelSlider, controls.pencilSketch.kernelValue);
-    setupSlider(controls.pencilSketch.sigmaSpaceSlider, controls.pencilSketch.sigmaSpaceValue);
-    setupSlider(controls.pencilSketch.sigmaColorSlider, controls.pencilSketch.sigmaColorValue, val => parseFloat(val).toFixed(2));
-    setupSlider(controls.edge.cannyThreshold1Slider, controls.edge.cannyThreshold1Value);
-    setupSlider(controls.edge.cannyThreshold2Slider, controls.edge.cannyThreshold2Value);
-}
+});
 
-function startVideoProcessing() {
+function startApp() {
+    const video = document.getElementById('video');
+    const canvasInput = document.getElementById('canvasInput');
+    const canvasOutput = document.getElementById('canvasOutput');
+    const filterControls = document.querySelector('filter-controls');
+    const ctxInput = canvasInput.getContext('2d');
+
+    let currentFilterState = {};
+    let streaming = false;
+
     navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(stream => {
+        .then(function(stream) {
             video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play();
-                requestAnimationFrame(processVideoFrame);
-            };
+            video.play();
         })
-        .catch(err => {
-            console.error("Camera access failed:", err);
-            statusElement.innerHTML = `Camera access failed: ${err.message}. Please grant permission and refresh the page.`;
+        .catch(function(err) {
+            console.log("An error occurred: " + err);
         });
 
-    const hiddenCanvas = document.createElement('canvas');
-    const hiddenContext = hiddenCanvas.getContext('2d');
+    video.addEventListener('canplay', function(ev){
+        if (!streaming) {
+            // Use the intrinsic video dimensions, not the element's dimensions
+            const width = video.videoWidth;
+            const height = video.videoHeight;
 
-    function processVideoFrame() {
-        if (video.paused || video.ended || video.videoWidth === 0) {
-            requestAnimationFrame(processVideoFrame);
-            return;
+            // Ensure the dimensions are valid before setting up the canvases and starting the processing
+            if (width > 0 && height > 0) {
+                canvasInput.width = width;
+                canvasInput.height = height;
+                canvasOutput.width = width;
+                canvasOutput.height = height;
+                streaming = true;
+                // Start the processing loop
+                requestAnimationFrame(processFrame);
+            }
         }
+    }, false);
 
-        let src, dst, temp; // Mats for this frame
+    function processFrame() {
+        if (!streaming) return;
+        ctxInput.drawImage(video, 0, 0, canvasInput.width, canvasInput.height);
+        applyFilters();
+        requestAnimationFrame(processFrame);
+    }
+
+    function applyFilters() {
+        if (!streaming) return;
+
+        const src = cv.imread(canvasInput);
+        let mat1 = new cv.Mat();
+        let mat2 = new cv.Mat();
+        src.copyTo(mat1);
 
         try {
-            const w = video.videoWidth;
-            const h = video.videoHeight;
-
-            if (hiddenCanvas.width !== w || hiddenCanvas.height !== h) {
-                hiddenCanvas.width = w;
-                hiddenCanvas.height = h;
-                canvasOutput.width = w;
-                canvasOutput.height = h;
+            const exclusiveFilterFunc = getActiveExclusiveFilter(currentFilterState);
+            if (exclusiveFilterFunc) {
+                exclusiveFilterFunc(mat1, mat2);
+                mat1.delete();
+                mat1 = mat2.clone();
             }
 
-            hiddenContext.drawImage(video, 0, 0, w, h);
-            const imageData = hiddenContext.getImageData(0, 0, w, h);
-            src = cv.matFromImageData(imageData);
-            dst = new cv.Mat();
-            temp = new cv.Mat();
+            if (currentFilterState.sharpen && currentFilterState.sharpen.enable) {
+                window.snapFilters.applySharpen(mat1, mat2, currentFilterState.sharpen.intensity, src);
+                mat1.delete();
+                mat1 = mat2.clone();
+            }
 
-            const activeFilterControl = Object.values(controls).find(c => c.enable && c.enable.checked);
-
-            if (!activeFilterControl) {
-                src.copyTo(dst);
-            } else {
-                if (activeFilterControl === controls.blur) window.snapFilters.applyBoxBlur(src, dst, parseInt(controls.blur.slider.value));
-                else if (activeFilterControl === controls.gaussianBlur) window.snapFilters.applyGaussianBlur(src, dst, parseInt(controls.gaussianBlur.kernelSlider.value), parseFloat(controls.gaussianBlur.sigmaXSlider.value), parseFloat(controls.gaussianBlur.sigmaYSlider.value));
-                else if (activeFilterControl === controls.sharpen) window.snapFilters.applySharpen(src, dst, parseFloat(controls.sharpen.slider.value));
-                else if (activeFilterControl === controls.emboss) window.snapFilters.applyEmboss(src, dst);
-                else if (activeFilterControl === controls.pencilSketch) window.snapFilters.applyPencilSketch(src, dst, parseInt(controls.pencilSketch.kernelSlider.value), parseFloat(controls.pencilSketch.sigmaSpaceSlider.value), parseFloat(controls.pencilSketch.sigmaColorSlider.value));
-                else if (activeFilterControl === controls.grayscale) {
-                    window.snapFilters.applyGrayscale(src, temp);
-                    cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
-                } else if (activeFilterControl === controls.edge) {
-                    const method = document.querySelector('input[name="edge-method"]:checked').value;
-                    if (method === 'sobel') window.snapFilters.applySobel(src, dst, document.querySelector('input[name="sobel-direction"]:checked').value);
-                    else window.snapFilters.applyCanny(src, dst, parseInt(controls.edge.cannyThreshold1Slider.value), parseInt(controls.edge.cannyThreshold2Slider.value));
-                } else {
-                    src.copyTo(dst);
+            if (currentFilterState.grayscale && currentFilterState.grayscale.enable) {
+                const activeExclusiveName = getActiveExclusiveFilterName(currentFilterState);
+                if (activeExclusiveName !== 'pencil' && activeExclusiveName !== 'edge' && activeExclusiveName !== 'emboss') {
+                    window.snapFilters.applyGrayscale(mat1, mat2);
+                    mat1.delete();
+                    mat1 = mat2.clone();
                 }
             }
-            
-            cv.imshow(canvasOutput, dst);
 
-        } catch (err) {
-            console.error("Error in processing loop:", err);
+            if (mat1.channels() === 1) {
+                cv.cvtColor(mat1, mat2, cv.COLOR_GRAY2RGBA);
+                cv.imshow('canvasOutput', mat2);
+            } else {
+                cv.imshow('canvasOutput', mat1);
+            }
         } finally {
-            if (src) src.delete();
-            if (dst) dst.delete();
-            if (temp) temp.delete();
-            requestAnimationFrame(processVideoFrame); 
+            src.delete();
+            mat1.delete();
+            mat2.delete();
         }
     }
-}
 
-// --- Main Execution --- 
-// This is the official and robust way to wait for OpenCV.js
-var Module = {
-    onRuntimeInitialized: () => {
-        console.log("OpenCV.js is ready.");
-        statusElement.style.display = 'none';
-        mainContent.style.display = 'block';
-        setupUI();
-        startVideoProcessing();
+    function getActiveExclusiveFilter(state) {
+        if (state.blur && state.blur.enable) {
+            return (src, dst) => window.snapFilters.applyBoxBlur(src, dst, state.blur.kernelSize);
+        }
+        if (state.gaussianBlur && state.gaussianBlur.enable) {
+            return (src, dst) => window.snapFilters.applyGaussianBlur(src, dst, state.gaussianBlur.kernelSize, state.gaussianBlur.sigmaX, state.gaussianBlur.sigmaY);
+        }
+        if (state.emboss && state.emboss.enable) {
+            return (src, dst) => window.snapFilters.applyEmboss(src, dst);
+        }
+        if (state.pencilSketch && state.pencilSketch.enable) {
+            return (src, dst) => window.snapFilters.applyPencilSketch(src, dst, state.pencilSketch.kernelSize);
+        }
+        if (state.edge && state.edge.enable) {
+            if (state.edge.method === 'sobel') {
+                return (src, dst) => window.snapFilters.applySobel(src, dst, state.edge.sobelDirection);
+            }
+            if (state.edge.method === 'canny') {
+                return (src, dst) => window.snapFilters.applyCanny(src, dst, state.edge.cannyThreshold1, state.edge.cannyThreshold2);
+            }
+        }
+        return null;
     }
-};
+
+    function getActiveExclusiveFilterName(state) {
+        if (state.blur && state.blur.enable) return 'blur';
+        if (state.gaussianBlur && state.gaussianBlur.enable) return 'gaussian';
+        if (state.emboss && state.emboss.enable) return 'emboss';
+        if (state.pencilSketch && state.pencilSketch.enable) return 'pencil';
+        if (state.edge && state.edge.enable) return 'edge';
+        return null;
+    }
+
+    function setupEventListeners() {
+        filterControls.addEventListener('filterchange', (e) => {
+            currentFilterState = e.detail;
+        });
+    }
+
+    // Initial filter state
+    currentFilterState = filterControls.getFilterState();
+    setupEventListeners();
+}

@@ -3,171 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapFilter - Real-Time Camera</title>
+    <title>SnapFilter - Live Camera</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-gray-900 text-white">
 
-    <div id="status" class="text-center text-2xl p-8">Loading OpenCV.js...</div>
+    <a href="index.html" class="absolute top-4 left-4 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition-colors z-20">Back</a>
 
-    <div id="main-content" class="container mx-auto px-4 py-12" style="display: none;">
-
-        <a href="index.html" class="absolute top-4 left-4 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition-colors">Back</a>
-
+    <div class="container mx-auto px-4 py-12">
         <div class="text-center mb-12">
             <h1 class="text-5xl font-extrabold mb-4">
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
-                    Real-Time Camera Filtering
+                    Live Camera Feed
                 </span>
             </h1>
-            <p class="text-lg text-gray-400">Apply filters to your live camera feed.</p>
+            <p class="text-lg text-gray-400">Apply filters in real-time to your camera feed.</p>
         </div>
 
         <div class="flex flex-col md:flex-row gap-8">
             <div class="w-full md:w-1/3">
-                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h2 class="text-3xl font-bold text-center mb-6">Filters</h2>
-
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center space-x-3">
-                            <input type="checkbox" id="blur-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                            <span class="text-lg font-bold">Box Blur</span>
-                        </label>
-                        <span id="blur-kernel-value" class="text-lg">5x5</span>
-                    </div>
-                    <input type="range" id="blur-kernel-size" min="1" max="51" step="2" value="5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-4">
-
-                    <div class="flex items-center justify-between mt-6 border-t border-gray-700 pt-6">
-                        <label class="flex items-center space-x-3">
-                            <input type="checkbox" id="gaussian-blur-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                            <span class="text-lg font-bold">Gaussian Blur</span>
-                        </label>
-                        <span id="gaussian-blur-kernel-value" class="text-lg">5x5</span>
-                    </div>
-                    <input type="range" id="gaussian-blur-kernel-size" min="1" max="51" step="2" value="5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-4">
-
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-lg">Sigma X</span>
-                        <span id="gaussian-blur-sigma-x-value" class="text-lg">0</span>
-                    </div>
-                    <input type="range" id="gaussian-blur-sigma-x" min="0" max="10" step="0.1" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-lg">Sigma Y</span>
-                        <span id="gaussian-blur-sigma-y-value" class="text-lg">0</span>
-                    </div>
-                    <input type="range" id="gaussian-blur-sigma-y" min="0" max="10" step="0.1" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                    <div class="flex items-center justify-between mt-6 border-t border-gray-700 pt-6">
-                        <label class="flex items-center space-x-3">
-                            <input type="checkbox" id="sharpen-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                            <span class="text-lg font-bold">Sharpen</span>
-                        </label>
-                        <span id="sharpen-intensity-value" class="text-lg">1.0</span>
-                    </div>
-                    <input type="range" id="sharpen-intensity" min="0" max="5" step="0.1" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-4">
-
-                    <div class="mt-6 border-t border-gray-700 pt-6">
-                        <label class="flex items-center space-x-3">
-                            <input type="checkbox" id="grayscale-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                            <span class="text-lg font-bold">Grayscale</span>
-                        </label>
-                    </div>
-                    <div class="mt-6 border-t border-gray-700 pt-6">
-                        <label class="flex items-center space-x-3">
-                            <input type="checkbox" id="emboss-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                            <span class="text-lg font-bold">Emboss</span>
-                        </label>
-                    </div>
-
-                    <div class="mt-6 border-t border-gray-700 pt-6">
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" id="pencil-sketch-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                                <span class="text-lg font-bold">Pencil Sketch</span>
-                            </label>
-                        </div>
-                        <div id="pencil-sketch-controls" class="mt-4" style="display: none;">
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg">Kernel Size</span>
-                                <span id="pencil-sketch-kernel-size-value" class="text-lg">21</span>
-                            </div>
-                            <input type="range" id="pencil-sketch-kernel-size" min="1" max="51" step="2" value="21" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                            <div class="flex items-center justify-between mt-4">
-                                <span class="text-lg">Sigma Space</span>
-                                <span id="pencil-sketch-sigma-space-value" class="text-lg">75</span>
-                            </div>
-                            <input type="range" id="pencil-sketch-sigma-space" min="1" max="200" step="1" value="75" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                            <div class="flex items-center justify-between mt-4">
-                                <span class="text-lg">Sigma Color</span>
-                                <span id="pencil-sketch-sigma-color-value" class="text-lg">0.10</span>
-                            </div>
-                            <input type="range" id="pencil-sketch-sigma-color" min="0" max="1" step="0.01" value="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-                        </div>
-                    </div>
-
-                    <div class="mt-6 border-t border-gray-700 pt-6">
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" id="edge-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
-                                <span class="text-lg font-bold">Edge Detection</span>
-                            </label>
-                        </div>
-
-                        <div id="edge-controls" class="mt-4" style="display: none;">
-                            <div class="flex items-center space-x-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="edge-method" id="edge-method-sobel" value="sobel" checked class="form-radio h-4 w-4 text-violet-600 bg-gray-700 border-gray-600 focus:ring-violet-500">
-                                    <span class="ml-2">Sobel</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="edge-method" id="edge-method-canny" value="canny" class="form-radio h-4 w-4 text-violet-600 bg-gray-700 border-gray-600 focus:ring-violet-500">
-                                    <span class="ml-2">Canny</span>
-                                </label>
-                            </div>
-
-                            <div id="sobel-controls" class="mt-4">
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center">
-                                        <input type="radio" name="sobel-direction" id="sobel-direction-x" value="x" checked class="form-radio h-4 w-4 text-violet-600 bg-gray-700 border-gray-600 focus:ring-violet-500">
-                                        <span class="ml-2">Horizontal</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="radio" name="sobel-direction" id="sobel-direction-y" value="y" class="form-radio h-4 w-4 text-violet-600 bg-gray-700 border-gray-600 focus:ring-violet-500">
-                                        <span class="ml-2">Vertical</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div id="canny-controls" class="mt-4" style="display: none;">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-lg">Threshold 1</span>
-                                    <span id="canny-threshold1-value" class="text-lg">50</span>
-                                </div>
-                                <input type="range" id="canny-threshold1" min="0" max="255" step="1" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-
-                                <div class="flex items-center justify-between mt-4">
-                                    <span class="text-lg">Threshold 2</span>
-                                    <span id="canny-threshold2-value" class="text-lg">100</span>
-                                </div>
-                                <input type="range" id="canny-threshold2" min="0" max="255" step="1" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                 <filter-controls></filter-controls>
             </div>
 
             <div class="w-full md:w-2/3">
                 <div class="grid md:grid-cols-2 gap-8">
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h2 class="text-2xl font-bold mb-4 text-center">Original Feed</h2>
-                        <video id="videoInput" playsinline autoplay class="w-full h-auto rounded-md"></video>
+                        <h2 class="text-2xl font-bold mb-4 text-center">Camera Feed</h2>
+                        <video id="video" class="w-full h-auto rounded-md" playsinline autoplay></video>
+                        <canvas id="canvasInput" class="hidden"></canvas> 
                     </div>
                     <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                        <h2 class="text-2xl font-bold mb-4 text-center">Filtered Feed</h2>
+                        <h2 class="text-2xl font-bold mb-4 text-center">Filtered Output</h2>
                         <canvas id="canvasOutput" class="w-full h-auto rounded-md"></canvas>
                     </div>
                 </div>
@@ -175,11 +41,8 @@
         </div>
     </div>
 
-    <!-- filters.js defines the window.snapFilters object -->
+    <script src="components/FilterControls.js" type="module"></script>
     <script src="js/filters.js"></script>
-    <!-- This script defines the onRuntimeInitialized callback -->
     <script src="js/camera.js"></script>
-    <!-- This script is standard OpenCV, it will call the callback when it's ready -->
-    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 </body>
 </html>

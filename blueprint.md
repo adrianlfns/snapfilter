@@ -20,9 +20,22 @@ This project is a web-based image filtering application called SnapFilter. It al
 *   **Sharpen:** Enhances edges in the image. The intensity is adjustable.
 *   **Grayscale:** Converts the image to grayscale.
 *   **Emboss:** Applies an emboss effect.
-*   **Pencil Sketch:** Creates a pencil sketch effect using `cv.pencilSketch`. Kernel size (mapped to shade factor), sigma space, and sigma color are adjustable.
+*   **Pencil Sketch:** Creates a pencil sketch effect using `cv.pencilSketch`. Kernel size is adjustable.
 *   **Edge Detection:** Detects edges using either the Sobel or Canny method. Sobel direction and Canny thresholds are adjustable.
 
 ## Project Status
 
-**Stable.** The core functionality for both image upload and real-time camera filtering is complete and robust. The persistent "Bad size of input mat" error in the camera module has been definitively resolved by re-architecting the video processing pipeline to handle dynamic video dimension changes safely and efficiently.
+**Stable.** The core functionality for both image upload and real-time camera filtering is complete and robust. All styling issues with the reusable filter controls component have been definitively resolved. The camera initialization race condition has been fixed.
+
+## Current Task: Fix Camera Initialization (Completed)
+
+**Goal:** Resolve the "IndexSizeError: The source width is 0" error that occurs on `camera.html`.
+
+**Problem:** The application was attempting to get the video's dimensions and start the image processing loop before the video stream had fully loaded its metadata. This created a race condition where the `<video>` element's width and height were 0, causing `getImageData` to fail.
+
+**Solution:**
+
+1.  **Use Correct Video Properties:** The `canplay` event listener in `src/js/camera.js` was modified to use `video.videoWidth` and `video.videoHeight`. These properties provide the intrinsic dimensions of the video, whereas `video.width` and `video.height` refer to the dimensions of the HTML element itself.
+2.  **Add a Guard Clause:** A check (`if (width > 0 && height > 0)`) was added to ensure that the canvas dimensions are only set and the processing loop is only started *after* the video stream reports valid, non-zero dimensions.
+
+**Result:** The race condition is eliminated. The application now waits for the camera stream to be fully initialized before attempting to process video frames, making the camera feature stable and error-free.
