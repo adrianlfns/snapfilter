@@ -1,265 +1,153 @@
-let video = document.getElementById('videoInput');
-let canvasOutput = document.getElementById('canvasOutput');
+const video = document.getElementById('videoInput');
+const canvasOutput = document.getElementById('canvasOutput');
+const statusElement = document.getElementById('status');
+const mainContent = document.getElementById('main-content');
 
-// Filter controls
-let blurEnable = document.getElementById('blur-enable');
-let blurKernelSlider = document.getElementById('blur-kernel-size');
-let blurKernelValue = document.getElementById('blur-kernel-value');
+const controls = {
+    blur: { enable: document.getElementById('blur-enable'), slider: document.getElementById('blur-kernel-size'), value: document.getElementById('blur-kernel-value') },
+    gaussianBlur: { enable: document.getElementById('gaussian-blur-enable'), kernelSlider: document.getElementById('gaussian-blur-kernel-size'), kernelValue: document.getElementById('gaussian-blur-kernel-value'), sigmaXSlider: document.getElementById('gaussian-blur-sigma-x'), sigmaXValue: document.getElementById('gaussian-blur-sigma-x-value'), sigmaYSlider: document.getElementById('gaussian-blur-sigma-y'), sigmaYValue: document.getElementById('gaussian-blur-sigma-y-value') },
+    sharpen: { enable: document.getElementById('sharpen-enable'), slider: document.getElementById('sharpen-intensity'), value: document.getElementById('sharpen-intensity-value') },
+    grayscale: { enable: document.getElementById('grayscale-enable') },
+    emboss: { enable: document.getElementById('emboss-enable') },
+    pencilSketch: { enable: document.getElementById('pencil-sketch-enable'), controls: document.getElementById('pencil-sketch-controls'), kernelSlider: document.getElementById('pencil-sketch-kernel-size'), kernelValue: document.getElementById('pencil-sketch-kernel-size-value'), sigmaSpaceSlider: document.getElementById('pencil-sketch-sigma-space'), sigmaSpaceValue: document.getElementById('pencil-sketch-sigma-space-value'), sigmaColorSlider: document.getElementById('pencil-sketch-sigma-color'), sigmaColorValue: document.getElementById('pencil-sketch-sigma-color-value') },
+    edge: { enable: document.getElementById('edge-enable'), controls: document.getElementById('edge-controls'), sobelControls: document.getElementById('sobel-controls'), cannyControls: document.getElementById('canny-controls'), methodRadios: document.querySelectorAll('input[name="edge-method"]'), sobelDirectionRadios: document.querySelectorAll('input[name="sobel-direction"]'), cannyThreshold1Slider: document.getElementById('canny-threshold1'), cannyThreshold1Value: document.getElementById('canny-threshold1-value'), cannyThreshold2Slider: document.getElementById('canny-threshold2'), cannyThreshold2Value: document.getElementById('canny-threshold2-value') }
+};
 
-let gaussianBlurEnable = document.getElementById('gaussian-blur-enable');
-let gaussianBlurKernelSlider = document.getElementById('gaussian-blur-kernel-size');
-let gaussianBlurKernelValue = document.getElementById('gaussian-blur-kernel-value');
-let gaussianBlurSigmaXSlider = document.getElementById('gaussian-blur-sigma-x');
-let gaussianBlurSigmaXValue = document.getElementById('gaussian-blur-sigma-x-value');
-let gaussianBlurSigmaYSlider = document.getElementById('gaussian-blur-sigma-y');
-let gaussianBlurSigmaYValue = document.getElementById('gaussian-blur-sigma-y-value');
-
-let sharpenEnable = document.getElementById('sharpen-enable');
-let sharpenIntensitySlider = document.getElementById('sharpen-intensity');
-let sharpenIntensityValue = document.getElementById('sharpen-intensity-value');
-
-let grayscaleEnable = document.getElementById('grayscale-enable');
-let embossEnable = document.getElementById('emboss-enable');
-
-// Edge Detection Controls
-let edgeEnable = document.getElementById('edge-enable');
-let edgeControls = document.getElementById('edge-controls');
-let sobelControls = document.getElementById('sobel-controls');
-let cannyControls = document.getElementById('canny-controls');
-let edgeMethodRadios = document.querySelectorAll('input[name="edge-method"]');
-let sobelDirectionRadios = document.querySelectorAll('input[name="sobel-direction"]');
-let cannyThreshold1Slider = document.getElementById('canny-threshold1');
-let cannyThreshold1Value = document.getElementById('canny-threshold1-value');
-let cannyThreshold2Slider = document.getElementById('canny-threshold2');
-let cannyThreshold2Value = document.getElementById('canny-threshold2-value');
-
-function startApp() {
-    console.log('OpenCV Ready for Camera');
-
-    // Initial UI state
-    blurKernelSlider.style.opacity = blurEnable.checked ? '1' : '0.5';
-    gaussianBlurKernelSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    gaussianBlurSigmaXSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    gaussianBlurSigmaYSlider.style.opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-    sharpenIntensitySlider.style.opacity = sharpenEnable.checked ? '1' : '0.5';
-    edgeControls.style.display = edgeEnable.checked ? 'block' : 'none';
-
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(function(stream) {
-            video.srcObject = stream;
-            video.play();
-        })
-        .catch(function(err) {
-            console.log("An error occurred: " + err);
+function setupUI() {
+    const allFilters = Object.values(controls).map(c => c.enable).filter(Boolean);
+    allFilters.forEach(filter => {
+        filter.addEventListener('change', () => {
+            if (filter.checked) {
+                allFilters.forEach(otherFilter => {
+                    if (otherFilter !== filter) { otherFilter.checked = false; otherFilter.dispatchEvent(new Event('change')); }
+                });
+            }
         });
+    });
 
-    let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-    let dst = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-    let cap = new cv.VideoCapture(video);
+    Object.values(controls).forEach(control => {
+        if (!control.enable) return;
+        const container = control.slider?.parentElement || control.controls;
+        control.enable.addEventListener('change', () => {
+            const isChecked = control.enable.checked;
+            if (container) container.style.opacity = isChecked ? '1' : '0.5';
+            if (control.controls) control.controls.style.display = isChecked ? 'block' : 'none';
+        });
+        control.enable.dispatchEvent(new Event('change'));
+    });
 
-    const FPS = 30;
+    controls.edge.methodRadios.forEach(radio => radio.addEventListener('change', () => {
+        const sobelVisible = document.getElementById('edge-method-sobel').checked;
+        controls.edge.sobelControls.style.display = sobelVisible ? 'block' : 'none';
+        controls.edge.cannyControls.style.display = sobelVisible ? 'none' : 'block';
+    }));
+    document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
 
-    function processVideo() {
-        try {
-            if (!video.srcObject || video.readyState < 3) {
-                setTimeout(processVideo, 1000 / FPS);
-                return;
-            }
-
-            let begin = Date.now();
-            cap.read(src);
-
-            let blurred = new cv.Mat();
-            let processed = new cv.Mat();
-
-            // 1. Apply blur if enabled
-            if (blurEnable.checked) {
-                let kernelSize = parseInt(blurKernelSlider.value);
-                window.snapFilters.applyBoxBlur(src, blurred, kernelSize);
-            } else if (gaussianBlurEnable.checked) {
-                let kernelSize = parseInt(gaussianBlurKernelSlider.value);
-                let sigmaX = parseFloat(gaussianBlurSigmaXSlider.value);
-                let sigmaY = parseFloat(gaussianBlurSigmaYSlider.value);
-                window.snapFilters.applyGaussianBlur(src, blurred, kernelSize, sigmaX, sigmaY);
-            } else {
-                src.copyTo(blurred);
-            }
-
-            // 2. Apply either edge detection or sharpen to the (potentially) blurred image
-            if (edgeEnable.checked) {
-                const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
-                if (edgeMethod === 'sobel') {
-                    const sobelDirection = document.querySelector('input[name="sobel-direction"]:checked').value;
-                    window.snapFilters.applySobel(blurred, processed, sobelDirection);
-                } else if (edgeMethod === 'canny') {
-                    const threshold1 = parseInt(cannyThreshold1Slider.value);
-                    const threshold2 = parseInt(cannyThreshold2Slider.value);
-                    window.snapFilters.applyCanny(blurred, processed, threshold1, threshold2);
-                }
-            } else if (sharpenEnable.checked) {
-                window.snapFilters.applySharpen(blurred, processed, parseFloat(sharpenIntensitySlider.value));
-            } else if (embossEnable.checked) {
-                window.snapFilters.applyEmboss(blurred, processed);
-            } else {
-                blurred.copyTo(processed);
-            }
-            
-            // 3. Apply grayscale if enabled
-            if (grayscaleEnable.checked) {
-                let temp = new cv.Mat();
-                window.snapFilters.applyGrayscale(processed, temp);
-                // If edge detection was not used, convert back to RGBA for consistency
-                if (!edgeEnable.checked) {
-                    cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
-                } else {
-                    temp.copyTo(dst);
-                }
-                temp.delete();
-            } else {
-                processed.copyTo(dst);
-            }
-            cv.imshow('canvasOutput', dst);
-            blurred.delete();
-            processed.delete();
-
-            let delay = 1000 / FPS - (Date.now() - begin);
-            setTimeout(processVideo, delay);
-
-        } catch (err) {
-            console.error(err);
-            setTimeout(processVideo, 100); // Restart on error
+    const setupSlider = (slider, valueDisplay, format = val => val) => {
+        if (slider && valueDisplay) {
+            const update = () => { valueDisplay.textContent = format(slider.value); };
+            slider.addEventListener('input', update);
+            update();
         }
     };
-
-    video.addEventListener('loadeddata', () => {
-        src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
-        dst = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
-        canvasOutput.width = video.videoWidth;
-        canvasOutput.height = video.videoHeight;
-        setTimeout(processVideo, 0);
-    });
-
-    const allFilters = [blurEnable, gaussianBlurEnable, sharpenEnable, edgeEnable, grayscaleEnable, embossEnable];
-
-    function setMutualExclusivity(enabledFilter) {
-        allFilters.forEach(filter => {
-            if (filter !== enabledFilter) {
-                filter.checked = false;
-                filter.dispatchEvent(new Event('change'));
-            }
-        });
-    }
-
-    blurEnable.addEventListener('change', () => {
-        if (blurEnable.checked) setMutualExclusivity(blurEnable);
-        blurKernelSlider.style.opacity = blurEnable.checked ? '1' : '0.5';
-    });
-
-    blurKernelSlider.addEventListener('input', () => {
-        if (!blurEnable.checked) {
-            blurEnable.checked = true;
-            blurEnable.dispatchEvent(new Event('change'));
-        }
-        let kernelSize = parseInt(blurKernelSlider.value);
-        let displayKernel = kernelSize % 2 === 0 ? kernelSize + 1 : kernelSize;
-        blurKernelValue.textContent = `${displayKernel}x${displayKernel}`;
-    });
-
-    gaussianBlurEnable.addEventListener('change', () => {
-        if (gaussianBlurEnable.checked) setMutualExclusivity(gaussianBlurEnable);
-        const opacity = gaussianBlurEnable.checked ? '1' : '0.5';
-        gaussianBlurKernelSlider.style.opacity = opacity;
-        gaussianBlurSigmaXSlider.style.opacity = opacity;
-        gaussianBlurSigmaYSlider.style.opacity = opacity;
-    });
-
-    gaussianBlurKernelSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        let kernelSize = parseInt(gaussianBlurKernelSlider.value);
-        let displayKernel = kernelSize % 2 === 0 ? kernelSize + 1 : kernelSize;
-        gaussianBlurKernelValue.textContent = `${displayKernel}x${displayKernel}`;
-    });
-
-    gaussianBlurSigmaXSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        gaussianBlurSigmaXValue.textContent = parseFloat(gaussianBlurSigmaXSlider.value).toFixed(1);
-    });
-
-    gaussianBlurSigmaYSlider.addEventListener('input', () => {
-        if (!gaussianBlurEnable.checked) {
-            gaussianBlurEnable.checked = true;
-            gaussianBlurEnable.dispatchEvent(new Event('change'));
-        }
-        gaussianBlurSigmaYValue.textContent = parseFloat(gaussianBlurSigmaYSlider.value).toFixed(1);
-    });
-
-    sharpenEnable.addEventListener('change', () => {
-        if (sharpenEnable.checked) setMutualExclusivity(sharpenEnable);
-        sharpenIntensitySlider.style.opacity = sharpenEnable.checked ? '1' : '0.5';
-    });
-
-    sharpenIntensitySlider.addEventListener('input', () => {
-        if (!sharpenEnable.checked) {
-            sharpenEnable.checked = true;
-            sharpenEnable.dispatchEvent(new Event('change'));
-        }
-        sharpenIntensityValue.textContent = parseFloat(sharpenIntensitySlider.value).toFixed(1);
-    });
-    
-    grayscaleEnable.addEventListener('change', () => {
-        if (grayscaleEnable.checked) setMutualExclusivity(grayscaleEnable);
-    });
-
-    embossEnable.addEventListener('change', () => {
-        if (embossEnable.checked) setMutualExclusivity(embossEnable);
-    });
-
-
-    // --- Edge Detection Event Listeners ---
-
-    edgeEnable.addEventListener('change', () => {
-        if (edgeEnable.checked) setMutualExclusivity(edgeEnable);
-        edgeControls.style.display = edgeEnable.checked ? 'block' : 'none';
-    });
-
-    edgeMethodRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            const sobelVisible = document.getElementById('edge-method-sobel').checked;
-            sobelControls.style.display = sobelVisible ? 'block' : 'none';
-            cannyControls.style.display = sobelVisible ? 'none' : 'block';
-        });
-    });
-
-    sobelDirectionRadios.forEach(radio => {
-        radio.addEventListener('change', () => {});
-    });
-
-    cannyThreshold1Slider.addEventListener('input', () => {
-        cannyThreshold1Value.textContent = cannyThreshold1Slider.value;
-    });
-
-    cannyThreshold2Slider.addEventListener('input', () => {
-        cannyThreshold2Value.textContent = cannyThreshold2Slider.value;
-    });
-
-    // Trigger change to set initial visibility of controls
-    document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
+    const formatKernel = val => { let k = parseInt(val); k = k % 2 ? k : k + 1; return `${k}x${k}`; };
+    setupSlider(controls.blur.slider, controls.blur.value, formatKernel);
+    setupSlider(controls.gaussianBlur.kernelSlider, controls.gaussianBlur.kernelValue, formatKernel);
+    setupSlider(controls.gaussianBlur.sigmaXSlider, controls.gaussianBlur.sigmaXValue, val => parseFloat(val).toFixed(1));
+    setupSlider(controls.gaussianBlur.sigmaYSlider, controls.gaussianBlur.sigmaYValue, val => parseFloat(val).toFixed(1));
+    setupSlider(controls.sharpen.slider, controls.sharpen.value, val => parseFloat(val).toFixed(1));
+    setupSlider(controls.pencilSketch.kernelSlider, controls.pencilSketch.kernelValue);
+    setupSlider(controls.pencilSketch.sigmaSpaceSlider, controls.pencilSketch.sigmaSpaceValue);
+    setupSlider(controls.pencilSketch.sigmaColorSlider, controls.pencilSketch.sigmaColorValue, val => parseFloat(val).toFixed(2));
+    setupSlider(controls.edge.cannyThreshold1Slider, controls.edge.cannyThreshold1Value);
+    setupSlider(controls.edge.cannyThreshold2Slider, controls.edge.cannyThreshold2Value);
 }
 
+function startVideoProcessing() {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+                requestAnimationFrame(processVideoFrame);
+            };
+        })
+        .catch(err => {
+            console.error("Camera access failed:", err);
+            statusElement.innerHTML = `Camera access failed: ${err.message}. Please grant permission and refresh the page.`;
+        });
 
-(function() {
-    const script = document.createElement('script');
-    script.src = 'https://docs.opencv.org/4.x/opencv.js';
-    script.onload = () => {
-        cv.onRuntimeInitialized = () => {
-            startApp();
-        };
-    };
-    document.head.appendChild(script);
-})();
+    const hiddenCanvas = document.createElement('canvas');
+    const hiddenContext = hiddenCanvas.getContext('2d');
+
+    function processVideoFrame() {
+        if (video.paused || video.ended || video.videoWidth === 0) {
+            requestAnimationFrame(processVideoFrame);
+            return;
+        }
+
+        let src, dst, temp; // Mats for this frame
+
+        try {
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+
+            if (hiddenCanvas.width !== w || hiddenCanvas.height !== h) {
+                hiddenCanvas.width = w;
+                hiddenCanvas.height = h;
+                canvasOutput.width = w;
+                canvasOutput.height = h;
+            }
+
+            hiddenContext.drawImage(video, 0, 0, w, h);
+            const imageData = hiddenContext.getImageData(0, 0, w, h);
+            src = cv.matFromImageData(imageData);
+            dst = new cv.Mat();
+            temp = new cv.Mat();
+
+            const activeFilterControl = Object.values(controls).find(c => c.enable && c.enable.checked);
+
+            if (!activeFilterControl) {
+                src.copyTo(dst);
+            } else {
+                if (activeFilterControl === controls.blur) window.snapFilters.applyBoxBlur(src, dst, parseInt(controls.blur.slider.value));
+                else if (activeFilterControl === controls.gaussianBlur) window.snapFilters.applyGaussianBlur(src, dst, parseInt(controls.gaussianBlur.kernelSlider.value), parseFloat(controls.gaussianBlur.sigmaXSlider.value), parseFloat(controls.gaussianBlur.sigmaYSlider.value));
+                else if (activeFilterControl === controls.sharpen) window.snapFilters.applySharpen(src, dst, parseFloat(controls.sharpen.slider.value));
+                else if (activeFilterControl === controls.emboss) window.snapFilters.applyEmboss(src, dst);
+                else if (activeFilterControl === controls.pencilSketch) window.snapFilters.applyPencilSketch(src, dst, parseInt(controls.pencilSketch.kernelSlider.value), parseFloat(controls.pencilSketch.sigmaSpaceSlider.value), parseFloat(controls.pencilSketch.sigmaColorSlider.value));
+                else if (activeFilterControl === controls.grayscale) {
+                    window.snapFilters.applyGrayscale(src, temp);
+                    cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
+                } else if (activeFilterControl === controls.edge) {
+                    const method = document.querySelector('input[name="edge-method"]:checked').value;
+                    if (method === 'sobel') window.snapFilters.applySobel(src, dst, document.querySelector('input[name="sobel-direction"]:checked').value);
+                    else window.snapFilters.applyCanny(src, dst, parseInt(controls.edge.cannyThreshold1Slider.value), parseInt(controls.edge.cannyThreshold2Slider.value));
+                } else {
+                    src.copyTo(dst);
+                }
+            }
+            
+            cv.imshow(canvasOutput, dst);
+
+        } catch (err) {
+            console.error("Error in processing loop:", err);
+        } finally {
+            if (src) src.delete();
+            if (dst) dst.delete();
+            if (temp) temp.delete();
+            requestAnimationFrame(processVideoFrame); 
+        }
+    }
+}
+
+// --- Main Execution --- 
+// This is the official and robust way to wait for OpenCV.js
+var Module = {
+    onRuntimeInitialized: () => {
+        console.log("OpenCV.js is ready.");
+        statusElement.style.display = 'none';
+        mainContent.style.display = 'block';
+        setupUI();
+        startVideoProcessing();
+    }
+};

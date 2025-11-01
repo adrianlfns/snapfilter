@@ -1,47 +1,45 @@
+# SnapFilter - Real-Time Image & Camera Filtering
 
-# SnapFilter: Real-Time Photo and Camera Filter Application
+SnapFilter is a modern, framework-less web application that allows you to apply a variety of powerful visual filters to both static images and your live camera feed in real-time.
 
-SnapFilter is an interactive web application that allows you to apply a variety of filters to your images. Built with modern, framework-less web technologies, it leverages the power of **OpenCV.js** for high-performance, in-browser image processing.
+![SnapFilter Application Screenshot](https://storage.googleapis.com/static.aifire.dev/assets/snapfilter.png)
 
-You can either upload an image from your device or use your camera for real-time filtering, with a seamless and intuitive user interface.
+## Key Features
 
-## Features
+- **Dual Mode:** Choose between uploading a static image or using your live camera for filtering.
+- **Real-Time Previews:** See the original and filtered images side-by-side instantly.
+- **Adjustable Filters:** Fine-tune filter parameters with intuitive sliders and controls for the perfect look.
+- **Downloadable Results:** Save your filtered images directly from the upload page.
+- **Modern & Responsive:** Built with modern, framework-less web technologies (HTML, CSS, JavaScript) for a fast and responsive experience on any device.
+- **Advanced Image Processing:** Powered by the robust OpenCV.js library for high-performance computer vision tasks.
 
-*   **Dual Mode:** Choose between uploading a static image or using your live camera feed.
-*   **Real-Time Filtering:** See the effects of filters applied instantly as you adjust the controls.
-*   **Comprehensive Filter Library:**
-    *   **Box Blur:** Apply a simple, fast blur effect.
-    *   **Gaussian Blur:** Create a smoother, more natural blur with adjustable sigma values.
-    *   **Sharpen:** Enhance the details and edges in your image.
-    *   **Grayscale:** Convert your image to black and white.
-    *   **Edge Detection:** Highlight the edges in your image using either the **Sobel** or **Canny** algorithms.
-*   **Adjustable Controls:** Fine-tune filter parameters with intuitive sliders and radio buttons.
-*   **Download Your Creations:** Save your filtered images directly to your device.
-*   **Modern UI:** A sleek, dark-mode interface built with Tailwind CSS for a polished user experience.
+## Available Filters
 
-## How to Run the Application
+- **Box Blur:** A simple and fast blur effect.
+- **Gaussian Blur:** A smoother, more natural-looking blur.
+- **Sharpen:** Enhances the details and edges in your image.
+- **Grayscale:** Converts your image to classic black and white.
+- **Emboss:** Creates a stylized 3D embossed effect.
+- **Pencil Sketch:** Transforms your image into a hand-drawn artistic sketch.
+- **Edge Detection:** Highlight the edges in your image using the **Sobel** or **Canny** algorithms.
 
-This project consists of static HTML, CSS, and JavaScript files and does not require a complex build process. You can run it locally using any simple HTTP server.
+## How To Use
 
-### Using Python's HTTP Server
+### For Static Images
+1.  Navigate to the **[Upload Page](src/upload.html)**.
+2.  Click "Select Image" to upload an image from your device.
+3.  Use the checkboxes and sliders to select and adjust a filter.
+4.  Click "Download Image" to save your creation.
 
-If you have Python installed, you can easily start a server from the project's root directory.
+### For Live Camera
+1.  Navigate to the **[Camera Page](src/camera.html)**.
+2.  Grant the browser permission to access your camera.
+3.  Your live feed will appear on the left, and the filtered feed on the right.
+4.  Select and adjust the filters to see the effect in real-time.
 
-1.  **Navigate to the project's root directory** in your terminal.
+## Built With
 
-2.  **Start the HTTP server:**
-
-    *If you are using Python 3:*
-    ```bash
-    python3 -m http.server
-    ```
-
-    *If you are using Python 2:*
-    ```bash
-    python -m SimpleHTTPServer
-    ```
-
-3.  **Open the application in your browser:**
-    Navigate to `http://localhost:8000`.
-
-Now you can use the SnapFilter application.
+- **HTML5**
+- **Tailwind CSS**
+- **JavaScript (ES6+)**
+- **OpenCV.js** - For all image processing and computer vision operations.

@@ -48,6 +48,16 @@ function startApp() {
         emboss: {
             enable: document.getElementById('emboss-enable'),
         },
+        pencilSketch: {
+            enable: document.getElementById('pencil-sketch-enable'),
+            controls: document.getElementById('pencil-sketch-controls'),
+            kernelSlider: document.getElementById('pencil-sketch-kernel-size'),
+            kernelValue: document.getElementById('pencil-sketch-kernel-size-value'),
+            sigmaSpaceSlider: document.getElementById('pencil-sketch-sigma-space'),
+            sigmaSpaceValue: document.getElementById('pencil-sketch-sigma-space-value'),
+            sigmaColorSlider: document.getElementById('pencil-sketch-sigma-color'),
+            sigmaColorValue: document.getElementById('pencil-sketch-sigma-color-value'),
+        },
         edge: {
             enable: document.getElementById('edge-enable'),
             controls: document.getElementById('edge-controls'),
@@ -68,7 +78,8 @@ function startApp() {
         controls.sharpen.enable,
         controls.edge.enable,
         controls.grayscale.enable,
-        controls.emboss.enable
+        controls.emboss.enable,
+        controls.pencilSketch.enable
     ];
 
     // --- Core Functions ---
@@ -88,7 +99,7 @@ function startApp() {
                 src.copyTo(processed);
             }
 
-            if (controls.grayscale.enable.checked && getActiveFilterName() !== 'edge') {
+            if (controls.grayscale.enable.checked && getActiveFilterName() !== 'edge' && getActiveFilterName() !== 'pencil') {
                  const temp = new cv.Mat();
                  window.snapFilters.applyGrayscale(processed, temp);
                  cv.cvtColor(temp, dst, cv.COLOR_GRAY2RGBA);
@@ -126,6 +137,12 @@ function startApp() {
         if (controls.emboss.enable.checked) {
             return (src, dst) => window.snapFilters.applyEmboss(src, dst);
         }
+        if (controls.pencilSketch.enable.checked) {
+            const kernelSize = parseInt(controls.pencilSketch.kernelSlider.value);
+            const sigmaSpace = parseFloat(controls.pencilSketch.sigmaSpaceSlider.value);
+            const sigmaColor = parseFloat(controls.pencilSketch.sigmaColorSlider.value);
+            return (src, dst) => window.snapFilters.applyPencilSketch(src, dst, kernelSize, sigmaSpace, sigmaColor);
+        }
         if (controls.edge.enable.checked) {
             const edgeMethod = document.querySelector('input[name="edge-method"]:checked').value;
             if (edgeMethod === 'sobel') {
@@ -146,6 +163,7 @@ function startApp() {
         if (controls.gaussianBlur.enable.checked) return 'gaussian';
         if (controls.sharpen.enable.checked) return 'sharpen';
         if (controls.emboss.enable.checked) return 'emboss';
+        if (controls.pencilSketch.enable.checked) return 'pencil';
         if (controls.edge.enable.checked) return 'edge';
         return null;
     }
@@ -287,6 +305,37 @@ function startApp() {
             applyFilters();
         });
 
+        // Pencil Sketch
+        controls.pencilSketch.enable.addEventListener('change', () => {
+            if (controls.pencilSketch.enable.checked) setMutualExclusivity(controls.pencilSketch.enable);
+            controls.pencilSketch.controls.style.display = controls.pencilSketch.enable.checked ? 'block' : 'none';
+            applyFilters();
+        });
+        controls.pencilSketch.kernelSlider.addEventListener('input', () => {
+            if (!controls.pencilSketch.enable.checked) {
+                controls.pencilSketch.enable.checked = true;
+                controls.pencilSketch.enable.dispatchEvent(new Event('change'));
+            }
+            controls.pencilSketch.kernelValue.textContent = controls.pencilSketch.kernelSlider.value;
+            applyFilters();
+        });
+        controls.pencilSketch.sigmaSpaceSlider.addEventListener('input', () => {
+            if (!controls.pencilSketch.enable.checked) {
+                controls.pencilSketch.enable.checked = true;
+                controls.pencilSketch.enable.dispatchEvent(new Event('change'));
+            }
+            controls.pencilSketch.sigmaSpaceValue.textContent = controls.pencilSketch.sigmaSpaceSlider.value;
+            applyFilters();
+        });
+        controls.pencilSketch.sigmaColorSlider.addEventListener('input', () => {
+            if (!controls.pencilSketch.enable.checked) {
+                controls.pencilSketch.enable.checked = true;
+                controls.pencilSketch.enable.dispatchEvent(new Event('change'));
+            }
+            controls.pencilSketch.sigmaColorValue.textContent = parseFloat(controls.pencilSketch.sigmaColorSlider.value).toFixed(2);
+            applyFilters();
+        });
+
         // Edge Detection
         controls.edge.enable.addEventListener('change', () => {
             if (controls.edge.enable.checked) setMutualExclusivity(controls.edge.enable);
@@ -318,6 +367,7 @@ function startApp() {
         controls.gaussianBlur.sigmaXSlider.style.opacity = '0.5';
         controls.gaussianBlur.sigmaYSlider.style.opacity = '0.5';
         controls.sharpen.intensitySlider.style.opacity = '0.5';
+        controls.pencilSketch.controls.style.display = 'none';
         controls.edge.controls.style.display = 'none';
         document.getElementById('edge-method-sobel').dispatchEvent(new Event('change'));
     }

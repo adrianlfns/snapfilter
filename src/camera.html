@@ -9,9 +9,11 @@
 </head>
 <body class="bg-gray-900 text-white">
 
-    <a href="index.html" class="absolute top-4 left-4 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition-colors">Back</a>
+    <div id="status" class="text-center text-2xl p-8">Loading OpenCV.js...</div>
 
-    <div class="container mx-auto px-4 py-12">
+    <div id="main-content" class="container mx-auto px-4 py-12" style="display: none;">
+
+        <a href="index.html" class="absolute top-4 left-4 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition-colors">Back</a>
 
         <div class="text-center mb-12">
             <h1 class="text-5xl font-extrabold mb-4">
@@ -82,12 +84,40 @@
                     <div class="mt-6 border-t border-gray-700 pt-6">
                         <div class="flex items-center justify-between">
                             <label class="flex items-center space-x-3">
+                                <input type="checkbox" id="pencil-sketch-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
+                                <span class="text-lg font-bold">Pencil Sketch</span>
+                            </label>
+                        </div>
+                        <div id="pencil-sketch-controls" class="mt-4" style="display: none;">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">Kernel Size</span>
+                                <span id="pencil-sketch-kernel-size-value" class="text-lg">21</span>
+                            </div>
+                            <input type="range" id="pencil-sketch-kernel-size" min="1" max="51" step="2" value="21" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
+
+                            <div class="flex items-center justify-between mt-4">
+                                <span class="text-lg">Sigma Space</span>
+                                <span id="pencil-sketch-sigma-space-value" class="text-lg">75</span>
+                            </div>
+                            <input type="range" id="pencil-sketch-sigma-space" min="1" max="200" step="1" value="75" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
+
+                            <div class="flex items-center justify-between mt-4">
+                                <span class="text-lg">Sigma Color</span>
+                                <span id="pencil-sketch-sigma-color-value" class="text-lg">0.10</span>
+                            </div>
+                            <input type="range" id="pencil-sketch-sigma-color" min="0" max="1" step="0.01" value="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-2">
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-t border-gray-700 pt-6">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-3">
                                 <input type="checkbox" id="edge-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
                                 <span class="text-lg font-bold">Edge Detection</span>
                             </label>
                         </div>
 
-                        <div id="edge-controls" class="mt-4 hidden">
+                        <div id="edge-controls" class="mt-4" style="display: none;">
                             <div class="flex items-center space-x-4">
                                 <label class="flex items-center">
                                     <input type="radio" name="edge-method" id="edge-method-sobel" value="sobel" checked class="form-radio h-4 w-4 text-violet-600 bg-gray-700 border-gray-600 focus:ring-violet-500">
@@ -112,7 +142,7 @@
                                 </div>
                             </div>
 
-                            <div id="canny-controls" class="mt-4 hidden">
+                            <div id="canny-controls" class="mt-4" style="display: none;">
                                 <div class="flex items-center justify-between">
                                     <span class="text-lg">Threshold 1</span>
                                     <span id="canny-threshold1-value" class="text-lg">50</span>
@@ -145,9 +175,11 @@
         </div>
     </div>
 
-    <script src="js/cv.js"></script>
-    <script src="js/utils.js"></script>
+    <!-- filters.js defines the window.snapFilters object -->
     <script src="js/filters.js"></script>
+    <!-- This script defines the onRuntimeInitialized callback -->
     <script src="js/camera.js"></script>
+    <!-- This script is standard OpenCV, it will call the callback when it's ready -->
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 </body>
 </html>
