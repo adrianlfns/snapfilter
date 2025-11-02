@@ -85,6 +85,11 @@ This approach facilitated rapid prototyping and development, demonstrating a mod
 
 For effective vibe coding, clear and explicit instructions are critical. Ambiguous prompts will inevitably increase the number of iterative refinements required.
 
+## Screnshots
+
+### Upload Image Part 1
+![Upload Image Part 1](/assets/screenshots/UploadImage_Part1.gif "Upload Image Part 1")
+
 ## Demo app
 
 https://adrianlfns.github.io/snapfilter/
