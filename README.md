@@ -79,3 +79,12 @@ The development process involved a conversational workflow:
 4.  Providing feedback to the AI to refine and iterate until the feature was complete and correct.
 
 This approach facilitated rapid prototyping and development, demonstrating a modern AI-assisted workflow for building web applications.
+
+
+## Reflection on using vibe coding tools
+
+For effective vibe coding, clear and explicit instructions are critical. Ambiguous prompts will inevitably increase the number of iterative refinements required.
+
+## Demo app
+
+https://adrianlfns.github.io/snapfilter/
