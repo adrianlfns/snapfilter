@@ -137,18 +137,52 @@ window.snapFilters = {
      * @param {number} kernelSize - The blur kernel size, which affects the thickness of the sketch lines.
      */
     applyPencilSketch: function(src, dst, kernelSize) {
+        // Convert to grayscale - pencil sketches are monochrome
         let gray = new cv.Mat();
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        
+        // Invert the grayscale image to prepare for dodge blend effect
         let inverted = new cv.Mat();
         cv.bitwise_not(gray, inverted);
+        
+        // Blur the inverted image - this creates the base for edge detection
         let blurred = new cv.Mat();
         cv.GaussianBlur(inverted, blurred, new cv.Size(kernelSize, kernelSize), 0, 0, cv.BORDER_DEFAULT);
+        
+        // Apply dodge blend (divide) to reveal edges - core sketch effect
         let sketch = new cv.Mat();
         cv.divide(gray, blurred, sketch, 255.0);
-        cv.cvtColor(sketch, dst, cv.COLOR_GRAY2RGBA);
+        
+        // --- ENHANCEMENTS FOR MORE SKETCHY APPEARANCE ---
+        
+        // 1. Enhance edge contrast to make lines more prominent
+        let enhanced = new cv.Mat();
+        cv.convertScaleAbs(sketch, enhanced, 1.4, -25); // Increase contrast, reduce brightness
+        
+        // 2. Apply adaptive thresholding to create variable line weights (more organic)
+        let lines = new cv.Mat();
+        cv.adaptiveThreshold(enhanced, lines, 255, cv.ADAPTIVE_THRESH_MEAN_C, 
+                             cv.THRESH_BINARY, 11, 10);
+        
+        // 3. Blend the threshold lines with the original sketch for depth
+        let blended = new cv.Mat();
+        cv.addWeighted(enhanced, 0.6, lines, 0.4, 0, blended);
+        
+        // 4. Light blur to soften harsh edges slightly (more pencil-like)
+        let final = new cv.Mat();
+        cv.GaussianBlur(blended, final, new cv.Size(3, 3), 0);
+        
+        // Convert back to RGBA for output
+        cv.cvtColor(final, dst, cv.COLOR_GRAY2RGBA);
+        
+        // Clean up all temporary matrices
         gray.delete();
         inverted.delete();
         blurred.delete();
         sketch.delete();
+        enhanced.delete();
+        lines.delete();
+        blended.delete();
+        final.delete();
     }
 };

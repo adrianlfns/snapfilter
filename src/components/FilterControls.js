@@ -18,7 +18,7 @@ const filterControlsTemplate = `
     </div>
 
     <!-- Gaussian Blur Filter -->
-    <div class="flex items-center justify-between mt-6 border-t border-gray-700 pt-6">
+    <div class="flex items-center justify-between border-t border-gray-700 pt-6">
         <label class="flex items-center space-x-3">
             <input type="checkbox" id="gaussian-blur-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
             <span class="text-lg font-bold">Gaussian Blur</span>
@@ -45,7 +45,7 @@ const filterControlsTemplate = `
     </div>
 
     <!-- Sharpen Filter -->
-    <div class="flex items-center justify-between mt-6 border-t border-gray-700 pt-6">
+    <div class="flex items-center justify-between border-t border-gray-700 pt-6">
         <label class="flex items-center space-x-3">
             <input type="checkbox" id="sharpen-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
             <span class="text-lg font-bold">Sharpen</span>
@@ -60,7 +60,7 @@ const filterControlsTemplate = `
     </div>
 
     <!-- Grayscale Filter -->
-    <div class="mt-6 border-t border-gray-700 pt-6">
+    <div class="border-t border-gray-700 pt-6">
         <label class="flex items-center space-x-3">
             <input type="checkbox" id="grayscale-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
             <span class="text-lg font-bold">Grayscale</span>
@@ -68,7 +68,7 @@ const filterControlsTemplate = `
     </div>
     
     <!-- Emboss Filter -->
-    <div class="mt-6 border-t border-gray-700 pt-6">
+    <div class="border-t border-gray-700 pt-6">
         <label class="flex items-center space-x-3">
             <input type="checkbox" id="emboss-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
             <span class="text-lg font-bold">Emboss</span>
@@ -76,7 +76,7 @@ const filterControlsTemplate = `
     </div>
 
     <!-- Pencil Sketch Filter -->
-    <div class="mt-6 border-t border-gray-700 pt-6">
+    <div class="border-t border-gray-700 pt-6">
         <label class="flex items-center space-x-3">
             <input type="checkbox" id="pencil-sketch-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
             <span class="text-lg font-bold">Pencil Sketch</span>
@@ -91,7 +91,7 @@ const filterControlsTemplate = `
     </div>
 
     <!-- Edge Detection Filter -->
-    <div class="mt-6 border-t border-gray-700 pt-6">
+    <div class="border-t border-gray-700 pt-6">
         <div class="flex items-center justify-between">
             <label class="flex items-center space-x-3">
                 <input type="checkbox" id="edge-enable" class="form-checkbox h-5 w-5 text-violet-600 bg-gray-700 border-gray-600 rounded focus:ring-violet-500">
