@@ -93,6 +93,14 @@ For effective vibe coding, clear and explicit instructions are critical. Ambiguo
 ### Upload Image Part 2
 ![Upload Image Part 2](/assets/screenshots/UploadImage_Part2.gif "Upload Image Part 2")
 
+### Live Camera Feed Part 1
+![Live Camera Feed Part 1](/assets/screenshots/RealTimeCamera_Part1.gif "Upload Image Part 1")
+
+
+### Live Camera Feed Part 2
+![Live Camera Feed Part 2](/assets/screenshots/RealTimeCamera_Part2.gif "Upload Image Part 2")
+
+
 ## Demo app
 
 https://adrianlfns.github.io/snapfilter/
